@@ -15,7 +15,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: python scripts/check_repo.py
+      - run: python -m pip install -r plugins/corridor-analysis/requirements.txt
       - run: node --check plugins/research-evidence/index.js
       - run: python plugins/research-evidence/evidence_worker.py --self-test
       - run: node --check plugins/research-run/index.js
       - run: python plugins/research-run/run_worker.py --self-test
+      - run: node --check plugins/corridor-analysis/index.js
+      - run: python plugins/corridor-analysis/corridor_worker.py --self-test
