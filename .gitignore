@@ -1,0 +1,35 @@
+# Environments and dependencies
+.venv/
+venv/
+node_modules/
+__pycache__/
+*.pyc
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+credentials/
+*.key.json
+service-account*.json
+*.pem
+*.key
+
+# Research data and generated outputs
+data/
+outputs/
+*.tif
+*.tiff
+*.h5
+*.gpkg
+*.pkl
+*.joblib
+
+# Local-only files
+.scratch/
+tmp/
+temp/
+.DS_Store
+Thumbs.db
+coverage/
+dist/

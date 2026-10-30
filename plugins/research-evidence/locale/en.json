@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Research Evidence Audit",
+    "description": "Audit project authority files, figure export manifests and SHA-256 hashes, claim-evidence maps, and numeric conflict registers without modifying research files."
+  }
+}

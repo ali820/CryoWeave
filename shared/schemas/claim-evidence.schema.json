@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["claim_id", "proposed_claim", "evidence_status", "gate"],
+  "properties": {
+    "claim_id": { "type": "string", "minLength": 1 },
+    "manuscript_section": { "type": "string" },
+    "proposed_claim": { "type": "string", "minLength": 1 },
+    "claim_class": { "type": "string" },
+    "evidence_source_ids": { "type": "string" },
+    "evidence_status": { "type": "string", "minLength": 1 },
+    "gate": { "type": "string", "minLength": 1 },
+    "allowed_language": { "type": "string" },
+    "forbidden_language": { "type": "string" },
+    "figure_table_slot": { "type": "string" },
+    "publication_firewall": { "type": "string" },
+    "required_action": { "type": "string" },
+    "priority": { "type": "string" },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,10 @@
+- insert:
+    - id: cryo-research-evidence
+      name: '@cryo-research/evidence'
+      config:
+        pythonPath: python
+        timeoutMs: 120000
+        maxHashBytes: 268435456
+        allowedRoots:
+          - E:/文章同步
+          - C:/Users/wsdzk/Documents/deepseek-harness/default-workspace

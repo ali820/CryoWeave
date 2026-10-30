@@ -1,0 +1,13 @@
+{
+  "name": "cryo-research-plugins",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Evidence-grounded DeepSeek Harness plugins for cryosphere, lake, corridor, and Earth-observation research.",
+  "workspaces": [
+    "plugins/*"
+  ],
+  "scripts": {
+    "test": "python scripts/check_repo.py"
+  }
+}

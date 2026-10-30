@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["code", "severity", "message"],
+  "properties": {
+    "code": { "type": "string", "minLength": 1 },
+    "severity": { "enum": ["error", "warning", "info"] },
+    "path": { "type": "string" },
+    "message": { "type": "string", "minLength": 1 },
+    "expected": {},
+    "actual": {},
+    "status": { "type": "string" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["runId", "plugin", "pluginVersion", "startedUtc", "status", "inputs", "outputs"],
+  "properties": {
+    "runId": { "type": "string", "minLength": 1 },
+    "plugin": { "type": "string", "minLength": 1 },
+    "pluginVersion": { "type": "string", "minLength": 1 },
+    "startedUtc": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["planned", "running", "complete", "failed", "cancelled"] },
+    "config": { "type": "object" },
+    "inputs": { "type": "array", "items": { "type": "object" } },
+    "outputs": { "type": "array", "items": { "type": "object" } },
+    "qa": { "type": "object" }
+  },
+  "additionalProperties": true
+}
