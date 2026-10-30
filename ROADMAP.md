@@ -1,4 +1,4 @@
-# 核心插件路线图
+# CryoWeave 核心插件路线图
 
 状态：`planned` 未开始；`in-progress` 正在开发；`mvp` 已有最小可用版本；`stable` 已有完整验证。
 
