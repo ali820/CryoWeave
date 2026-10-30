@@ -5,7 +5,7 @@
 | 顺序 | 插件 | 主要产出 | 状态 |
 | --- | --- | --- | --- |
 | 1 | `research-evidence` | 权威状态、证据门、数字/图件审计报告 | mvp |
-| 2 | `research-run` | 项目配置、运行清单、断点续跑和资产登记 | planned |
+| 2 | `research-run` | 项目配置、运行清单、断点续跑和资产登记 | mvp |
 | 3 | `corridor-analysis` | 走廊单元、覆盖账本、距离梯度和对照 QA | planned |
 | 4 | `gee-analysis` | GEE 观测锚点、统计和导出任务 | 已有独立版本，待迁移 |
 | 5 | `environmental-indices` | NDVI/FVC/LST/TVDI 等指标和趋势 | planned |

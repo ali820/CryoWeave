@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Research run ledger</title>
+  <rect width="64" height="64" rx="14" fill="#f2f1fb"/>
+  <path d="M18 10h28a4 4 0 0 1 4 4v36a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V14a4 4 0 0 1 4-4Z" fill="#5b55a6"/>
+  <path d="M23 10v9h18v-9M23 28h18M23 36h12M23 44h9" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <path d="m39 39 4 4 9-11" fill="none" stroke="#f2b84b" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

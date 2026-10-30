@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Research Run Ledger",
+    "description": "Create research run manifests, record lifecycle states, register input/output artifact hashes, list runs, and detect missing or stale artifacts."
+  }
+}

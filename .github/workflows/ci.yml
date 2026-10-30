@@ -17,3 +17,5 @@ jobs:
       - run: python scripts/check_repo.py
       - run: node --check plugins/research-evidence/index.js
       - run: python plugins/research-evidence/evidence_worker.py --self-test
+      - run: node --check plugins/research-run/index.js
+      - run: python plugins/research-run/run_worker.py --self-test
