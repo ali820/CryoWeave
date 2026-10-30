@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Corridor Analysis Units",
+    "description": "Inspect local or Earth Engine corridor vectors, create chainage segments and independent buffer-ring units, and summarize zonal statistics with coverage metadata."
+  }
+}

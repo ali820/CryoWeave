@@ -49,13 +49,25 @@
 
 详见[运行账本说明](plugins/research-run/README.md)和[生命周期验证](plugins/research-run/VALIDATION.md)。
 
+## 新增：Corridor Analysis Units
+
+`corridor-analysis` 将路线转换为标准化的里程—缓冲研究单元：
+
+- 检查本地 GeoJSON/Shapefile/GeoPackage 或 GEE FeatureCollection；
+- 按公里分段，可指定方向、起止里程和工作 CRS；
+- 生成独立缓冲环，避免累计缓冲重复计数；
+- 输出 GeoJSON、CSV、manifest 和几何/文件哈希；
+- 按环、按段或联合分组统计，支持权重和像元覆盖汇总。
+
+真实独库验证已生成 **12 段 × 5 环 = 60 个研究单元**，路线合并长度为 **525.730278 km**。详见[走廊分析说明](plugins/corridor-analysis/README.md)和[真实路线验证](plugins/corridor-analysis/VALIDATION.md)。
+
 ## 快速开始
 
 ### 环境
 
 - DeepSeek Harness 当前兼容版本；
 - Node.js 24、pnpm、Python 3.12；
-- 插件只需 Python 标准库，无额外 Python 依赖。
+- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis` 的地理依赖见 `plugins/corridor-analysis/requirements.txt`。
 
 ### 克隆与验证
 
