@@ -26,6 +26,7 @@ outputs/
 *.joblib
 
 # Local-only files
+.cryo-state/
 .scratch/
 tmp/
 temp/

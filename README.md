@@ -37,6 +37,18 @@
 
 详见[插件说明](plugins/research-evidence/README.md)和[真实验证记录](plugins/research-evidence/VALIDATION.md)。
 
+## 新增：Research Run Ledger
+
+`research-run` 为每次研究分析建立独立运行账本，支持 `create`、`list`、`get`、`update_status`、`register_artifacts` 和 `verify`：
+
+- 创建 pipeline 运行及步骤，记录输入配置和 SHA-256；
+- 更新 planned/running/complete/failed/cancelled 状态并保留历史；
+- 登记输出产物，之后检测缺失或内容变化；
+- 状态只写入独立 `stateRoot`，不修改原始研究项目；
+- 敏感配置键自动脱敏，首版不开放任意命令执行。
+
+详见[运行账本说明](plugins/research-run/README.md)和[生命周期验证](plugins/research-run/VALIDATION.md)。
+
 ## 快速开始
 
 ### 环境
