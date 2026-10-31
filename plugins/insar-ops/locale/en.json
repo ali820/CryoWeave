@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "InSAR Operations and QA",
+    "description": "Inventory Sentinel-1 archives, plan interferogram pairs, analyze velocity/coherence products for anomaly clusters, and verify reference versions and file hashes."
+  }
+}
