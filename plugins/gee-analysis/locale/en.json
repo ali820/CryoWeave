@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "GEE Data Analysis",
+    "description": "Run bounded Google Earth Engine collection summaries, regional statistics, time series, and Sentinel-2 NDVI analyses directly from the agent."
+  }
+}

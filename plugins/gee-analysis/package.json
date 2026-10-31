@@ -1,0 +1,30 @@
+{
+  "name": "@cryo-research/gee",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Run bounded Google Earth Engine analyses, including corridor-unit NDVI zonal statistics, directly from DeepSeek Harness.",
+  "type": "module",
+  "dependencies": {
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.3"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "gee_worker.py",
+    "requirements.txt",
+    "README.md",
+    "VALIDATION.md",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

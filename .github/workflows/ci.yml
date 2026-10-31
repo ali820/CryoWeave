@@ -22,3 +22,5 @@ jobs:
       - run: python plugins/research-run/run_worker.py --self-test
       - run: node --check plugins/corridor-analysis/index.js
       - run: python plugins/corridor-analysis/corridor_worker.py --self-test
+      - run: node --check plugins/gee-analysis/index.js
+      - run: python plugins/gee-analysis/gee_worker.py --self-test

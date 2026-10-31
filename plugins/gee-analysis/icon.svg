@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">GEE data analysis</title>
+  <defs>
+    <linearGradient id="globe" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f80ed"/>
+      <stop offset="1" stop-color="#1557a0"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#eef6ff"/>
+  <circle cx="28" cy="31" r="19" fill="url(#globe)"/>
+  <path d="M11 25c8 4 24 4 34-1M10 35c10-3 25-2 36 3M28 12c-6 9-7 26 0 38M28 12c7 10 8 27 0 38" fill="none" stroke="#a9d3ff" stroke-width="1.6" opacity=".85"/>
+  <path d="M18 24c3-6 8-8 12-7-1 5-5 9-12 7ZM31 39c4-5 9-6 13-4-3 5-7 7-13 4Z" fill="#71d38b"/>
+  <path d="M42 47l4-7 4 4 6-11" fill="none" stroke="#ffb020" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="42" cy="47" r="2.2" fill="#ffb020"/>
+  <circle cx="46" cy="40" r="2.2" fill="#ffb020"/>
+  <circle cx="50" cy="44" r="2.2" fill="#ffb020"/>
+  <circle cx="56" cy="33" r="2.2" fill="#ffb020"/>
+</svg>
