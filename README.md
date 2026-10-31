@@ -148,13 +148,24 @@
 
 真实分类表 5 折空间分组验证 Accuracy 为 0.968901、ROC AUC 为 0.989415；置换重要性不是 SHAP，也不证明因果。详见[模型实验说明](plugins/model-experiments/README.md)和[真实模型验证](plugins/model-experiments/VALIDATION.md)。
 
+## 新增：Physics Scenarios and Ensembles
+
+`physics-scenarios` 提供可解释的解析物理场景：
+
+- 周期表面温度下的一维热传导；
+- Terzaghi 一维固结与沉降守恒检查；
+- 给定范围的参数集合和分位数；
+- 全部输出明确 `scenarioOnly`，不冒充全耦合求解或预报。
+
+真实热学参数验证得到热扩散率 0.075 m²/day、阻尼深度 0.15451 m，100 个集合样本的温度分位数也已复核。详见[物理场景说明](plugins/physics-scenarios/README.md)和[真实物理验证](plugins/physics-scenarios/VALIDATION.md)。
+
 ## 快速开始
 
 ### 环境
 
 - DeepSeek Harness 当前兼容版本；
 - Node.js 24、pnpm、Python 3.12；
-- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis`、`environmental-indices`、`lake-mapper`、`lake-lineage`、`hydro-event`、`insar-ops`、`field-multisource` 与 `model-experiments` 的依赖见各自 `requirements.txt`。
+- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis`、`environmental-indices`、`lake-mapper`、`lake-lineage`、`hydro-event`、`insar-ops`、`field-multisource`、`model-experiments` 与 `physics-scenarios` 的依赖见各自 `requirements.txt`。
 
 ### 克隆与验证
 

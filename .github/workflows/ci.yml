@@ -23,6 +23,7 @@ jobs:
       - run: python -m pip install -r plugins/insar-ops/requirements.txt
       - run: python -m pip install -r plugins/field-multisource/requirements.txt
       - run: python -m pip install -r plugins/model-experiments/requirements.txt
+      - run: python -m pip install -r plugins/physics-scenarios/requirements.txt
       - run: node --check plugins/research-evidence/index.js
       - run: python plugins/research-evidence/evidence_worker.py --self-test
       - run: node --check plugins/research-run/index.js
@@ -45,3 +46,5 @@ jobs:
       - run: python plugins/field-multisource/field_worker.py --self-test
       - run: node --check plugins/model-experiments/index.js
       - run: python plugins/model-experiments/model_worker.py --self-test
+      - run: node --check plugins/physics-scenarios/index.js
+      - run: python plugins/physics-scenarios/physics_worker.py --self-test

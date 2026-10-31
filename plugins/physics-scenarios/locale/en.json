@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Physics Scenarios and Ensembles",
+    "description": "Run analytic thermal conduction and Terzaghi consolidation scenarios, parameter ensembles, and conservation/range checks without implying a full coupled solver."
+  }
+}
