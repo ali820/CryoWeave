@@ -137,13 +137,24 @@
 
 真实上下游地温验证完成 1,373 行 QA 和 1,273 条同日期配对，RMSE 为 2.164967°C；该结果表示跨站点差异，不是传感器精度证明。详见[多源观测说明](plugins/field-multisource/README.md)和[真实现场验证](plugins/field-multisource/VALIDATION.md)。
 
+## 新增：Model Experiments and Validation
+
+`model-experiments` 对科研表格执行：
+
+- 分组交叉验证与滚动回测；
+- 同折基线比较；
+- 置换重要性与标准差；
+- 跨折重复特征、分组重叠和目标列泄漏检查。
+
+真实分类表 5 折空间分组验证 Accuracy 为 0.968901、ROC AUC 为 0.989415；置换重要性不是 SHAP，也不证明因果。详见[模型实验说明](plugins/model-experiments/README.md)和[真实模型验证](plugins/model-experiments/VALIDATION.md)。
+
 ## 快速开始
 
 ### 环境
 
 - DeepSeek Harness 当前兼容版本；
 - Node.js 24、pnpm、Python 3.12；
-- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis`、`environmental-indices`、`lake-mapper`、`lake-lineage`、`hydro-event`、`insar-ops` 与 `field-multisource` 的依赖见各自 `requirements.txt`。
+- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis`、`environmental-indices`、`lake-mapper`、`lake-lineage`、`hydro-event`、`insar-ops`、`field-multisource` 与 `model-experiments` 的依赖见各自 `requirements.txt`。
 
 ### 克隆与验证
 

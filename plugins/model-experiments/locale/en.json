@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Model Experiments and Validation",
+    "description": "Run grouped and rolling model validation, baseline comparisons, permutation importance, and explicit leakage checks on research tables."
+  }
+}

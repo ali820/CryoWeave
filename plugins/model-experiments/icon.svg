@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Model experiments</title>
+  <rect width="64" height="64" rx="14" fill="#f3f0fb"/>
+  <path d="M14 48V16M14 48h38" stroke="#8c82b5" stroke-width="2"/>
+  <path d="m18 40 9-12 8 7 13-18" fill="none" stroke="#6654a4" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m18 40 9-12 8 7 13-18" fill="none" stroke="#6654a4" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="27" cy="28" r="4" fill="#e6b34f"/>
+  <circle cx="35" cy="35" r="4" fill="#77b7d6"/>
+  <path d="M45 10h7v7h-7z" fill="#e6b34f"/>
+</svg>
