@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Physics scenarios</title>
+  <rect width="64" height="64" rx="14" fill="#fbf1ed"/>
+  <path d="M16 48V16M16 48h34" stroke="#c18e79" stroke-width="2"/>
+  <path d="M20 38c8-22 16-22 24 0" fill="none" stroke="#d66d50" stroke-width="4" stroke-linecap="round"/>
+  <path d="M20 44c8-14 16-14 24 0" fill="none" stroke="#edb15e" stroke-width="3" stroke-linecap="round"/>
+  <path d="M32 10v12M28 16l4 6 4-6" fill="none" stroke="#d66d50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
