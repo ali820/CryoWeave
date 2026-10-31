@@ -1,0 +1,11 @@
+- insert:
+    - id: cryo-environmental-indices
+      name: '@cryo-research/environmental-indices'
+      config:
+        pythonPath: C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/cryo-research-plugins/plugins/environmental-indices/.venv/Scripts/python.exe
+        timeoutMs: 180000
+        maxHashBytes: 268435456
+        stateRoot: C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/.cryo-state/indices
+        allowedRoots:
+          - E:/文章同步
+          - C:/Users/wsdzk/Documents/deepseek-harness/default-workspace
