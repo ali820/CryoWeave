@@ -61,13 +61,24 @@
 
 真实独库验证已生成 **12 段 × 5 环 = 60 个研究单元**，路线合并长度为 **525.730278 km**。详见[走廊分析说明](plugins/corridor-analysis/README.md)和[真实路线验证](plugins/corridor-analysis/VALIDATION.md)。
 
+## 迁移完成：GEE Analysis 1.1
+
+现有 GEE 插件已迁移为 `@cryo-research/gee`，保留 `gee_status` 与 `gee_analyze`，并新增 `gee_corridor_analyze`：
+
+- 直接读取走廊 `units.geojson`，逐单元计算 Sentinel-2 NDVI 和有效像元数；
+- 支持 `unitIds`、`ringIds`、影像数与单元数上限；
+- 输出 NDVI CSV 和 manifest，可继续由走廊统计和 `research-run` 复用；
+- 已验证前 3 个单元的真实在线计算及完整跨插件链路。
+
+详见[GEE 使用说明](plugins/gee-analysis/README.md)和[联合验证记录](plugins/gee-analysis/VALIDATION.md)。
+
 ## 快速开始
 
 ### 环境
 
 - DeepSeek Harness 当前兼容版本；
 - Node.js 24、pnpm、Python 3.12；
-- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis` 的地理依赖见 `plugins/corridor-analysis/requirements.txt`。
+- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis` 与 `gee-analysis` 的依赖见各自 `requirements.txt`。
 
 ### 克隆与验证
 

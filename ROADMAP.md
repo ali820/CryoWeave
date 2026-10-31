@@ -7,7 +7,7 @@
 | 1 | `research-evidence` | 权威状态、证据门、数字/图件审计报告 | mvp |
 | 2 | `research-run` | 项目配置、运行清单、断点续跑和资产登记 | mvp |
 | 3 | `corridor-analysis` | 走廊单元、覆盖账本、距离梯度和对照 QA | mvp |
-| 4 | `gee-analysis` | GEE 观测锚点、统计和导出任务 | 已有独立版本，待迁移 |
+| 4 | `gee-analysis` | GEE 观测锚点、统计和导出任务 | mvp |
 | 5 | `environmental-indices` | NDVI/FVC/LST/TVDI 等指标和趋势 | planned |
 | 6 | `lake-mapper` | 水体、岸线、面积、重心、SI/FD | planned |
 | 7 | `lake-lineage` | 湖泊谱系、队列、事件和交通共位 | planned |

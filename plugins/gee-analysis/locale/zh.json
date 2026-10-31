@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "GEE 遥感数据分析",
+    "description": "让 Agent 直接运行 Google Earth Engine 影像集概览、区域统计、时间序列和 Sentinel-2 NDVI 分析，并返回结构化结果。"
+  }
+}
