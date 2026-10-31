@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Hydro event</title>
+  <rect width="64" height="64" rx="14" fill="#eef6fb"/>
+  <path d="M10 42c8-4 14-4 22 0s14 4 22 0v10H10Z" fill="#4c9fd0"/>
+  <path d="M10 42c8-4 14-4 22 0s14 4 22 0" fill="none" stroke="#bfe6f5" stroke-width="2"/>
+  <path d="M25 12h14l-7 17Z" fill="#f0b94c"/>
+  <path d="M20 30h24" stroke="#4c9fd0" stroke-width="3" stroke-linecap="round"/>
+  <path d="M27 52h10" stroke="#4c9fd0" stroke-width="3" stroke-linecap="round"/>
+</svg>
