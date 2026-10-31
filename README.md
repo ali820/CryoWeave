@@ -83,13 +83,24 @@
 
 详见[环境指标说明](plugins/environmental-indices/README.md)和[真实栅格验证](plugins/environmental-indices/VALIDATION.md)。
 
+## 新增：Lake Mapping and Morphology
+
+`lake-mapper` 将水体提取与湖泊形态分析连接起来：
+
+- 从掩膜、MNDWI 或 NDWI 提取水体并过滤小图斑；
+- 直接分析已有湖泊矢量，计算面积、周长、重心、长短轴、紧致度、SI 和近似 FD；
+- 输出 WGS84 多边形、形态表和 manifest；
+- 真实四湖样例已验证，且明确保留源数据中的缓冲语义。
+
+详见[湖泊分析说明](plugins/lake-mapper/README.md)和[真实四湖验证](plugins/lake-mapper/VALIDATION.md)。
+
 ## 快速开始
 
 ### 环境
 
 - DeepSeek Harness 当前兼容版本；
 - Node.js 24、pnpm、Python 3.12；
-- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis` 与 `environmental-indices` 的依赖见各自 `requirements.txt`。
+- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis`、`environmental-indices` 与 `lake-mapper` 的依赖见各自 `requirements.txt`。
 
 ### 克隆与验证
 

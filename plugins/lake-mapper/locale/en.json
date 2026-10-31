@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Lake Mapping and Morphology",
+    "description": "Extract water polygons from masks or water indices and calculate lake area, perimeter, centroid, elongation, compactness, shape index, and fractal dimension with reproducible metadata."
+  }
+}

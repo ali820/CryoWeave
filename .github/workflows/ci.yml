@@ -17,6 +17,7 @@ jobs:
       - run: python scripts/check_repo.py
       - run: python -m pip install -r plugins/corridor-analysis/requirements.txt
       - run: python -m pip install -r plugins/environmental-indices/requirements.txt
+      - run: python -m pip install -r plugins/lake-mapper/requirements.txt
       - run: node --check plugins/research-evidence/index.js
       - run: python plugins/research-evidence/evidence_worker.py --self-test
       - run: node --check plugins/research-run/index.js
@@ -27,3 +28,5 @@ jobs:
       - run: python plugins/gee-analysis/gee_worker.py --self-test
       - run: node --check plugins/environmental-indices/index.js
       - run: python plugins/environmental-indices/indices_worker.py --self-test
+      - run: node --check plugins/lake-mapper/index.js
+      - run: python plugins/lake-mapper/lake_worker.py --self-test
