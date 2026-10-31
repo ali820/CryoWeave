@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Lake Lineage and Exposure",
+    "description": "Track annual lake polygons using dominant mutual overlap, record merge/split/minor events, build stable endpoint cohorts, and compute present-day transport co-location with explicit limits."
+  }
+}

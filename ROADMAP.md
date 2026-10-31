@@ -10,7 +10,7 @@
 | 4 | `gee-analysis` | GEE 观测锚点、统计和导出任务 | mvp |
 | 5 | `environmental-indices` | NDVI/FVC/LST/TVDI 等指标和趋势 | mvp |
 | 6 | `lake-mapper` | 水体、岸线、面积、重心、SI/FD | mvp |
-| 7 | `lake-lineage` | 湖泊谱系、队列、事件和交通共位 | planned |
+| 7 | `lake-lineage` | 湖泊谱系、队列、事件和交通共位 | mvp |
 | 8 | `hydro-event` | 面积—水位—库容、闭合账和事件重建 | planned |
 | 9 | `insar-ops` | InSAR 任务、参考版本、覆盖和结果 QA | planned |
 | 10 | `field-multisource` | 地温/UAV/GPR/RTK 时空整合 | planned |
