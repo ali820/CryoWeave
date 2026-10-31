@@ -1,0 +1,30 @@
+{
+  "name": "@cryo-research/field-multisource",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Inspect field observation tables, align sources in time and space, run observation QA, and compare paired values with explicit error metrics.",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "field_worker.py",
+    "requirements.txt",
+    "README.md",
+    "VALIDATION.md",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dependencies": {
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.3"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

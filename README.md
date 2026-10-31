@@ -126,13 +126,24 @@
 
 异常簇仅用于 QA 与现场复核，不自动分类为滑坡或工程损伤。详见[InSAR 使用说明](plugins/insar-ops/README.md)和[真实产品验证](plugins/insar-ops/VALIDATION.md)。
 
+## 新增：Field Multisource Observations
+
+`field-multisource` 处理现场观测表格，支持：
+
+- CSV/Excel 源检查、时间范围、缺失、越界、重复和时间间隔 QA；
+- 按时间最近邻，或结合经纬度进行时空配对；
+- 输出配对行索引、时间差、距离和配对值；
+- 计算 MAE、RMSE、偏差、相关系数和 R²。
+
+真实上下游地温验证完成 1,373 行 QA 和 1,273 条同日期配对，RMSE 为 2.164967°C；该结果表示跨站点差异，不是传感器精度证明。详见[多源观测说明](plugins/field-multisource/README.md)和[真实现场验证](plugins/field-multisource/VALIDATION.md)。
+
 ## 快速开始
 
 ### 环境
 
 - DeepSeek Harness 当前兼容版本；
 - Node.js 24、pnpm、Python 3.12；
-- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis`、`environmental-indices`、`lake-mapper`、`lake-lineage`、`hydro-event` 与 `insar-ops` 的依赖见各自 `requirements.txt`。
+- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis`、`environmental-indices`、`lake-mapper`、`lake-lineage`、`hydro-event`、`insar-ops` 与 `field-multisource` 的依赖见各自 `requirements.txt`。
 
 ### 克隆与验证
 

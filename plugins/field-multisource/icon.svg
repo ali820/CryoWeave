@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Field multisource observations</title>
+  <rect width="64" height="64" rx="14" fill="#f1f5eb"/>
+  <path d="M13 48h38M16 39h32M19 30h26M22 21h20" stroke="#6a9f58" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="22" cy="21" r="4" fill="#e4ae47"/>
+  <circle cx="16" cy="39" r="4" fill="#77b7d6"/>
+  <path d="m37 12 4 7 8 1-6 5 2 8-8-4-7 4 2-8-6-5 8-1Z" fill="#77b7d6"/>
+</svg>

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Field Multisource Observations",
+    "description": "Inspect field observation tables, align sources in time and space, run observation QA, and compare paired values with explicit error metrics."
+  }
+}

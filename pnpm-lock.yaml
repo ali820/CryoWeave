@@ -20,6 +20,12 @@ importers:
         specifier: 0.2.1-rc.3
         version: 0.2.1-rc.3(1f5d0a9b849aaa1244bc4f2e453f609a)
 
+  plugins/field-multisource:
+    dependencies:
+      '@deepseek-ai/dsh-tools':
+        specifier: 0.2.1-rc.3
+        version: 0.2.1-rc.3(1f5d0a9b849aaa1244bc4f2e453f609a)
+
   plugins/gee-analysis:
     dependencies:
       '@deepseek-ai/dsh-tools':
