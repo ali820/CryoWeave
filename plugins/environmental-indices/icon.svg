@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Environmental indices</title>
+  <rect width="64" height="64" rx="14" fill="#eef8f1"/>
+  <path d="M11 49h42" stroke="#aac8b2" stroke-width="2"/>
+  <path d="M17 45 27 29l9 7 12-19" fill="none" stroke="#2c8a55" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M17 45 27 29l9 7 12-19" fill="none" stroke="#2c8a55" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 13h12v12H13z" fill="#79b6e8"/>
+  <path d="M39 38h12v12H39z" fill="#f0b94c"/>
+  <circle cx="27" cy="29" r="4" fill="#2c8a55"/>
+  <circle cx="36" cy="36" r="4" fill="#2c8a55"/>
+</svg>

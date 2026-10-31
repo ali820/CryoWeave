@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "环境指标与 TVDI 分析",
+    "description": "检查栅格网格，计算 NDVI、FVC、LST、NDMI、NDSI 和 TVDI，输出干湿边拟合、有效像元统计和可复现清单。"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@cryo-research/environmental-indices",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Calculate NDVI, FVC, LST, NDMI, NDSI, and TVDI from aligned local rasters with validity QA and feature-space diagnostics.",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "indices_worker.py",
+    "requirements.txt",
+    "README.md",
+    "VALIDATION.md",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dependencies": {
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.3"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

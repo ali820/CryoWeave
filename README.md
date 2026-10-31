@@ -72,13 +72,24 @@
 
 详见[GEE 使用说明](plugins/gee-analysis/README.md)和[联合验证记录](plugins/gee-analysis/VALIDATION.md)。
 
+## 新增：Environmental Indices and TVDI
+
+`environmental-indices` 支持本地栅格的 NDVI、FVC、LST、NDMI、NDSI 和 TVDI 计算：
+
+- 自动对齐不同原点、行列方向与 CRS 的栅格；
+- 支持缩放、范围过滤、NoData 和 Landsat QA_PIXEL；
+- 输出指标栅格、有效像元统计、TVDI 干湿边拟合和 manifest；
+- 真实独库 NDVI/LST 样例已验证 12,141 个有效像元及 8,051 个 TVDI 拟合点。
+
+详见[环境指标说明](plugins/environmental-indices/README.md)和[真实栅格验证](plugins/environmental-indices/VALIDATION.md)。
+
 ## 快速开始
 
 ### 环境
 
 - DeepSeek Harness 当前兼容版本；
 - Node.js 24、pnpm、Python 3.12；
-- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis` 与 `gee-analysis` 的依赖见各自 `requirements.txt`。
+- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis` 与 `environmental-indices` 的依赖见各自 `requirements.txt`。
 
 ### 克隆与验证
 

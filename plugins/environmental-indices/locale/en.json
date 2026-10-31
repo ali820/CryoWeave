@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Environmental Indices and TVDI",
+    "description": "Inspect aligned rasters, calculate NDVI/FVC/LST/NDMI/NDSI/TVDI with validity masks, and export TVDI dry/wet-edge fits, statistics, and reproducible manifests."
+  }
+}
