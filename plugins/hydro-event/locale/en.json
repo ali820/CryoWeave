@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Hydro Event and Water Balance",
+    "description": "Build DEM hypsometry, interpolate lake storage, assess water-balance closure, and run explicitly parameterized breach and weir scenarios with scenario-only labels."
+  }
+}

@@ -105,13 +105,24 @@
 
 交通结果仅表示现状平面共位，不自动升级为淹没、损伤或风险预测。详见[谱系与暴露说明](plugins/lake-lineage/README.md)和[真实年度验证](plugins/lake-lineage/VALIDATION.md)。
 
+## 新增：Hydro Event and Water Balance
+
+`hydro-event` 将库容计算与水量闭合连接起来：
+
+- 从 DEM 生成高程—面积—库容曲线并插值储量；
+- 计算释放量与平均出流，支持显式堰流情景；
+- 用 `outcomeTerm` 和 `nonSourceTerms` 明确结果项与来源项的符号约定；
+- 真实卓乃湖库容验证得到 3.139522 km³ 释放量，闭合率 87.178653%。
+
+详见[水文事件说明](plugins/hydro-event/README.md)和[真实库容验证](plugins/hydro-event/VALIDATION.md)。
+
 ## 快速开始
 
 ### 环境
 
 - DeepSeek Harness 当前兼容版本；
 - Node.js 24、pnpm、Python 3.12；
-- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis`、`environmental-indices`、`lake-mapper` 与 `lake-lineage` 的依赖见各自 `requirements.txt`。
+- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis`、`environmental-indices`、`lake-mapper`、`lake-lineage` 与 `hydro-event` 的依赖见各自 `requirements.txt`。
 
 ### 克隆与验证
 
