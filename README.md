@@ -94,13 +94,24 @@
 
 详见[湖泊分析说明](plugins/lake-mapper/README.md)和[真实四湖验证](plugins/lake-mapper/VALIDATION.md)。
 
+## 新增：Lake Lineage and Exposure
+
+`lake-lineage` 按双向主导重叠追踪年度湖泊，明确区分续接、合并、分裂、消失、歧义和小事端：
+
+- 输出谱系、事件台账、稳定端点队列和端点几何；
+- 支持重叠阈值、完整性过滤、端点面积变化和队列资格控制；
+- 计算端点湖泊与现状交通网络的最近距离及阈值共位；
+- 真实 Lake_TP 2020–2023 数据已验证 21,823 条谱系和 34,916 条事件记录。
+
+交通结果仅表示现状平面共位，不自动升级为淹没、损伤或风险预测。详见[谱系与暴露说明](plugins/lake-lineage/README.md)和[真实年度验证](plugins/lake-lineage/VALIDATION.md)。
+
 ## 快速开始
 
 ### 环境
 
 - DeepSeek Harness 当前兼容版本；
 - Node.js 24、pnpm、Python 3.12；
-- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis`、`environmental-indices` 与 `lake-mapper` 的依赖见各自 `requirements.txt`。
+- `research-evidence` 和 `research-run` 只需 Python 标准库；`corridor-analysis`、`gee-analysis`、`environmental-indices`、`lake-mapper` 与 `lake-lineage` 的依赖见各自 `requirements.txt`。
 
 ### 克隆与验证
 

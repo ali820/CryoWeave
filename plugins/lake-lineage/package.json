@@ -1,0 +1,30 @@
+{
+  "name": "@cryo-research/lake-lineage",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Track annual lake polygons with dominant-overlap rules, build lineage/event ledgers and stable cohorts, and assess present-day transport co-location.",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "lineage_worker.py",
+    "requirements.txt",
+    "README.md",
+    "VALIDATION.md",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dependencies": {
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.3"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Lake lineage</title>
+  <rect width="64" height="64" rx="14" fill="#eef5fb"/>
+  <path d="M15 17h14v14H15zM35 33h14v14H35z" fill="#4b9fd0"/>
+  <path d="M15 39h14v14H15z" fill="#86c6e8"/>
+  <path d="M29 24h12M22 31v8M29 46h12" fill="none" stroke="#f2b84b" stroke-width="3" stroke-linecap="round"/>
+  <path d="m39 18 5 5-5 5M45 40l5 5-5 5" fill="none" stroke="#4b6f91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
