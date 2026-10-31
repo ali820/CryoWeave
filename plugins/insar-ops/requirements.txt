@@ -1,0 +1,4 @@
+rasterio==1.4.3
+geopandas==1.2.0
+numpy>=2
+scipy>=1.14

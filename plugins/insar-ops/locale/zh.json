@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "InSAR 任务与结果 QA",
+    "description": "盘点 Sentinel-1 档案、规划干涉对、分析速率和相干性异常簇，并核验参考版本与产品哈希。"
+  }
+}
