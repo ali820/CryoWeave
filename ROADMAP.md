@@ -13,7 +13,7 @@
 | 7 | `lake-lineage` | 湖泊谱系、队列、事件和交通共位 | mvp |
 | 8 | `hydro-event` | 面积—水位—库容、闭合账和事件重建 | mvp |
 | 9 | `insar-ops` | InSAR 任务、参考版本、覆盖和结果 QA | mvp |
-| 10 | `field-multisource` | 地温/UAV/GPR/RTK 时空整合 | planned |
+| 10 | `field-multisource` | 地温/UAV/GPR/RTK 时空整合 | mvp |
 | 11 | `model-experiments` | 分组验证、滚动回测、SHAP 和敏感性 | planned |
 | 12 | `physics-scenarios` | 物理模型场景、守恒和集合不确定性 | planned |
 
