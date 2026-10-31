@@ -2,10 +2,10 @@
     - id: cryo-field-multisource
       name: '@cryo-research/field-multisource'
       config:
-        pythonPath: C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/cryo-research-plugins/plugins/field-multisource/.venv/Scripts/python.exe
+        pythonPath: C:/Users/wsdzk/Desktop/CryoWeave/plugins/field-multisource/.venv/Scripts/python.exe
         timeoutMs: 120000
         maxHashBytes: 268435456
-        stateRoot: C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/.cryo-state/field
+        stateRoot: C:/Users/wsdzk/Desktop/CryoWeave-state/field
         allowedRoots:
           - E:/文章同步
-          - C:/Users/wsdzk/Documents/deepseek-harness/default-workspace
+          - C:/Users/wsdzk/Desktop

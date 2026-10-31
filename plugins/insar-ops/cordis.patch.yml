@@ -2,10 +2,10 @@
     - id: cryo-insar-ops
       name: '@cryo-research/insar-ops'
       config:
-        pythonPath: C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/cryo-research-plugins/plugins/insar-ops/.venv/Scripts/python.exe
+        pythonPath: C:/Users/wsdzk/Desktop/CryoWeave/plugins/insar-ops/.venv/Scripts/python.exe
         timeoutMs: 180000
         maxHashBytes: 268435456
-        stateRoot: C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/.cryo-state/insar
+        stateRoot: C:/Users/wsdzk/Desktop/CryoWeave-state/insar
         allowedRoots:
           - E:/文章同步
-          - C:/Users/wsdzk/Documents/deepseek-harness/default-workspace
+          - C:/Users/wsdzk/Desktop

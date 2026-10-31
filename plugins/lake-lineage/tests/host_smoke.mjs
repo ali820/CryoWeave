@@ -6,8 +6,8 @@ const ctx = {
   tools: { register: (definition) => { tools.set(definition.name, definition); return () => tools.delete(definition.name) } },
 }
 apply(ctx, {
-  pythonPath: 'C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/cryo-research-plugins/plugins/lake-lineage/.venv/Scripts/python.exe',
-  stateRoot: 'C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/.cryo-state/lineage',
+  pythonPath: 'C:/Users/wsdzk/Desktop/CryoWeave/plugins/lake-lineage/.venv/Scripts/python.exe',
+  stateRoot: 'C:/Users/wsdzk/Desktop/CryoWeave-state/lineage',
   allowedRoots: ['E:/文章同步'],
   timeoutMs: 240000,
   maxHashBytes: 268435456,

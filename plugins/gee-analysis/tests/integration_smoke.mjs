@@ -1,7 +1,7 @@
 import { apply as applyCorridor } from '../../corridor-analysis/index.js'
 import { apply as applyRun } from '../../research-run/index.js'
 
-const stateRoot = 'C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/.cryo-state'
+const stateRoot = 'C:/Users/wsdzk/Desktop/CryoWeave-state'
 const corridorRoot = `${stateRoot}/corridor`
 const tools = new Map()
 const ctx = {
@@ -9,7 +9,7 @@ const ctx = {
   tools: { register: (definition) => { tools.set(definition.name, definition); return () => tools.delete(definition.name) } },
 }
 applyCorridor(ctx, {
-  pythonPath: 'C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/cryo-research-plugins/plugins/corridor-analysis/.venv/Scripts/python.exe',
+  pythonPath: 'C:/Users/wsdzk/Desktop/CryoWeave/plugins/corridor-analysis/.venv/Scripts/python.exe',
   geeProject: 'ee-my-road', stateRoot: corridorRoot, allowedRoots: ['E:/文章同步'], timeoutMs: 180000, maxHashBytes: 268435456,
 })
 applyRun(ctx, { allowedRoots: ['E:/文章同步'], stateRoot, timeoutMs: 120000, maxHashBytes: 268435456 })

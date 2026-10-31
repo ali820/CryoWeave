@@ -2,10 +2,10 @@
     - id: cryo-gee-analysis
       name: '@cryo-research/gee'
       config:
-        pythonPath: C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/cryo-research-plugins/plugins/gee-analysis/.venv/Scripts/python.exe
+        pythonPath: C:/Users/wsdzk/Desktop/CryoWeave/plugins/gee-analysis/.venv/Scripts/python.exe
         project: ee-my-road
         timeoutMs: 240000
-        stateRoot: C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/.cryo-state/corridor
+        stateRoot: C:/Users/wsdzk/Desktop/CryoWeave-state/corridor
         allowedRoots:
           - E:/文章同步
-          - C:/Users/wsdzk/Documents/deepseek-harness/default-workspace
+          - C:/Users/wsdzk/Desktop

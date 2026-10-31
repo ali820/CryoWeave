@@ -2,10 +2,10 @@
     - id: cryo-lake-lineage
       name: '@cryo-research/lake-lineage'
       config:
-        pythonPath: C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/cryo-research-plugins/plugins/lake-lineage/.venv/Scripts/python.exe
+        pythonPath: C:/Users/wsdzk/Desktop/CryoWeave/plugins/lake-lineage/.venv/Scripts/python.exe
         timeoutMs: 240000
         maxHashBytes: 268435456
-        stateRoot: C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/.cryo-state/lineage
+        stateRoot: C:/Users/wsdzk/Desktop/CryoWeave-state/lineage
         allowedRoots:
           - E:/文章同步
-          - C:/Users/wsdzk/Documents/deepseek-harness/default-workspace
+          - C:/Users/wsdzk/Desktop

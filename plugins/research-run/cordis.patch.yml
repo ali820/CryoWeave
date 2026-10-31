@@ -5,7 +5,7 @@
         pythonPath: python
         timeoutMs: 120000
         maxHashBytes: 268435456
-        stateRoot: C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/.cryo-state
+        stateRoot: C:/Users/wsdzk/Desktop/CryoWeave-state
         allowedRoots:
           - E:/文章同步
-          - C:/Users/wsdzk/Documents/deepseek-harness/default-workspace
+          - C:/Users/wsdzk/Desktop

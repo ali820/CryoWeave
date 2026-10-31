@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { apply } from '../index.js'
 
-const stateRoot = 'C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/.cryo-state'
+const stateRoot = 'C:/Users/wsdzk/Desktop/CryoWeave-state'
 const tools = new Map()
 const ctx = {
   effect: (callback) => callback(),

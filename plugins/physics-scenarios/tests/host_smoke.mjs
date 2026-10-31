@@ -6,8 +6,8 @@ const ctx = {
   tools: { register: (definition) => { tools.set(definition.name, definition); return () => tools.delete(definition.name) } },
 }
 apply(ctx, {
-  pythonPath: 'C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/cryo-research-plugins/plugins/physics-scenarios/.venv/Scripts/python.exe',
-  stateRoot: 'C:/Users/wsdzk/Documents/deepseek-harness/default-workspace/.cryo-state/physics',
+  pythonPath: 'C:/Users/wsdzk/Desktop/CryoWeave/plugins/physics-scenarios/.venv/Scripts/python.exe',
+  stateRoot: 'C:/Users/wsdzk/Desktop/CryoWeave-state/physics',
   timeoutMs: 120000,
   maxHashBytes: 268435456,
 })
