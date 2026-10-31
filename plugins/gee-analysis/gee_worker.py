@@ -672,7 +672,7 @@ def initialize_with_retry(ee: Any, options: dict[str, Any]) -> None:
 
 def main() -> None:
     try:
-        request = json.loads(sys.stdin.buffer.read().decode("utf-8-sig"))
+        request = {'operation': '_self_test'} if '--self-test' in sys.argv else json.loads(sys.stdin.buffer.read().decode("utf-8-sig"))
         if not isinstance(request, dict):
             raise UserInputError("Worker request must be a JSON object")
         operation = request.get("operation")
