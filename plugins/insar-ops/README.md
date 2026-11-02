@@ -33,11 +33,13 @@
 }
 ```
 
-输出 `interferogram_plan.csv` 和 manifest。该计划只基于文件名日期与轨道，**不表示已经计算垂直基线或完成干涉处理**。
+输出 `interferogram_plan.csv` 和 manifest。标准 S1A/S1B 命名使用绝对轨道字段按对应任务轨道周期换算相对轨道，不会把时间戳中的 `T` 误作轨道；非标准命名只接受显式分隔的 `T`/`R` 轨道字段，不支持的命名返回 `unknown`。`sameTrack=true` 时不配对未知轨道，`maxConnections` 按每个 master 的同轨道后续连接计数，而不是按跨轨道全局列表的偏移计数。
+
+该计划只基于文件名日期与轨道，**不表示已经计算垂直基线或完成干涉处理**。
 
 ### `analyze`
 
-使用已有速率和相干性 GeoTIFF 生成异常簇：
+使用已有速率和相干性 GeoTIFF 生成异常簇。输入必须是 `projectRoot` 内可直接读取的本地 GeoTIFF；拒绝 VRT、GDAL `/vsi*` 路径及其他间接数据源，防止借栅格引用访问根目录外或远程内容：
 
 ```json
 {
@@ -78,7 +80,7 @@
 }
 ```
 
-可附 `expectedReferenceVersion`，用于识别旧参考版本。文件缺失和 SHA-256 不符会分别报告。
+可附 `expectedReferenceVersion`，用于识别旧参考版本。文件缺失、SHA-256 缺失或格式非法、SHA-256 不符都会显式报告；缺少哈希的产品不会得到 `clean`。
 
 ## 科学边界
 

@@ -3,11 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.28.5",
   "description": "CryoWeave — Evidence-grounded DeepSeek Harness plugins for cold-region lakes, permafrost, transportation corridors, and Earth observation.",
   "workspaces": [
     "plugins/*"
   ],
   "scripts": {
-    "test": "python scripts/check_repo.py"
+    "test": "python scripts/check_repo.py && python scripts/run_self_tests.py && node scripts/run_host_tests.mjs",
+    "test:repo": "python scripts/check_repo.py",
+    "test:python": "python scripts/run_self_tests.py",
+    "test:host": "node scripts/run_host_tests.mjs"
   }
 }

@@ -1,29 +1,97 @@
+import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { apply } from '../index.js'
 
-const tools = new Map()
-const ctx = {
-  effect: (callback) => callback(),
-  tools: { register: (definition) => { tools.set(definition.name, definition); return () => tools.delete(definition.name) } },
+function selectPython() {
+  const configured = process.env.CRYO_PYTHON?.trim() || process.env.CRYO_HYDRO_EVENT_PYTHON?.trim()
+  if (configured) return configured
+  const pluginRoot = fileURLToPath(new URL('../', import.meta.url))
+  const local = [join(pluginRoot, '.venv', 'Scripts', 'python.exe'), join(pluginRoot, '.venv', 'bin', 'python')].find(existsSync)
+  if (local) return local
+  for (const candidate of ['python', 'python3']) {
+    const probe = spawnSync(candidate, ['--version'], { stdio: 'ignore' })
+    if (!probe.error && probe.status === 0) return candidate
+  }
+  return 'python'
 }
-apply(ctx, {
-  pythonPath: 'C:/Users/wsdzk/Desktop/CryoWeave/plugins/hydro-event/.venv/Scripts/python.exe',
-  stateRoot: 'C:/Users/wsdzk/Desktop/CryoWeave-state/hydro',
-  allowedRoots: ['E:/文章同步'],
-  timeoutMs: 180000,
-  maxHashBytes: 268435456,
-})
-const exec = { signal: AbortSignal.timeout(170000) }
-const call = async (args) => {
-  const result = await tools.get('hydro_event').execute(args, exec)
-  const parsed = JSON.parse(result)
-  if (!parsed.ok) throw new Error(result)
-  return parsed
+
+const temporary = await mkdtemp(join(tmpdir(), 'cryo-hydro-host-'))
+try {
+  const projectRoot = join(temporary, 'project')
+  const stateRoot = join(temporary, 'state')
+  await mkdir(projectRoot, { recursive: true })
+  await writeFile(join(projectRoot, 'hypsometry.csv'), [
+    'elev_m,area_below_km2,volume_km3',
+    '0,1,0',
+    '10,2,1',
+    '20,3,3',
+    '',
+  ].join('\n'), 'utf8')
+  await writeFile(join(projectRoot, 'components.csv'), [
+    'term,central_km3,lo_km3,hi_km3',
+    'inflow,2,1.5,2.5',
+    'outflow,-0.5,-0.7,-0.3',
+    'local,0.5,0.4,0.6',
+    'release,3,2,4',
+    '',
+  ].join('\n'), 'utf8')
+
+  const tools = new Map()
+  const ctx = {
+    effect: (callback) => callback(),
+    tools: { register: (definition) => { tools.set(definition.name, definition); return () => tools.delete(definition.name) } },
+  }
+  apply(ctx, {
+    pythonPath: selectPython(),
+    stateRoot,
+    allowedRoots: [projectRoot],
+    timeoutMs: 60000,
+    maxHashBytes: 1024 * 1024,
+  })
+  const tool = tools.get('hydro_event')
+  assert.equal(typeof tool?.execute, 'function', 'hydro_event was not registered')
+  const raw = async (args) => JSON.parse(await tool.execute(args, { signal: AbortSignal.timeout(60000) }))
+  const call = async (args) => {
+    const result = await raw(args)
+    assert.equal(result.ok, true, JSON.stringify(result))
+    return result
+  }
+
+  const storage = await call({ action: 'storage', projectRoot, hypsometry: 'hypsometry.csv', levelM: 10 })
+  assert.equal(storage.volumeKm3, 1)
+  assert.equal(storage.areaKm2, 2)
+  const breach = await call({
+    action: 'breach', projectRoot, hypsometry: 'hypsometry.csv',
+    preLevelM: 20, postLevelM: 0, durationDays: 2,
+    widthM: 2, dischargeCoefficient: 1.7, headM: 1,
+  })
+  assert.equal(breach.releaseKm3, 3)
+  assert.equal(breach.scenarioOnly, true)
+  assert.ok(Math.abs(breach.weirScenario.peakOutflowM3s - 3.4) < 1e-12)
+  const balance = await call({
+    action: 'water_balance', projectRoot, components: 'components.csv',
+    outcomeKm3: 1, outcomeTerm: 'release', nonSourceTerms: ['local'],
+  })
+  assert.equal(balance.summary.closureRatio, 1)
+  assert.equal(balance.summary.residualKm3, 0)
+
+  const invalid = await raw({ action: 'storage', projectRoot, hypsometry: '../outside.csv', levelM: 10 })
+  assert.equal(invalid.ok, false)
+  assert.equal(invalid.error?.code, 'HYDRO_ERROR')
+
+  console.log(JSON.stringify({
+    ok: true,
+    offline: true,
+    storageVolumeKm3: storage.volumeKm3,
+    releaseKm3: breach.releaseKm3,
+    closureRatio: balance.summary.closureRatio,
+    errorProtocol: invalid.error.code,
+  }))
+} finally {
+  await rm(temporary, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 })
 }
-const projectRoot = 'E:/文章同步/25-湖泊连续性分析'
-const storage = await call({ action: 'storage', projectRoot, hypsometry: '04_水量平衡/output/hypsometry_卓乃湖_AW3D30.csv', levelM: 4760 })
-if (storage.volumeKm3 <= 0) throw new Error('Storage interpolation failed')
-const breach = await call({ action: 'breach', projectRoot, hypsometry: '04_水量平衡/output/hypsometry_卓乃湖_AW3D30.csv', preLevelM: 4760, postLevelM: 4744.6, durationDays: 22, widthM: 40, dischargeCoefficient: 1.0, headM: 15.4 })
-if (Math.abs(breach.releaseKm3 - 3.139522) > 0.00001 || breach.scenarioOnly !== true) throw new Error('Unexpected breach result')
-const balance = await call({ action: 'water_balance', projectRoot, components: '04_水量平衡/output/closure_terms.csv', outcomeKm3: 3.073, outcomeTerm: '卓乃湖释放', nonSourceTerms: ['本地径流', '湖面直接降水'] })
-if (Math.abs(balance.summary.closureRatio - 0.8717865278229741) > 0.000001 || Math.abs(balance.summary.residualKm3 - 0.394) > 0.000001) throw new Error('Unexpected closure result')
-console.log(JSON.stringify({ ok: true, storageVolumeKm3: storage.volumeKm3, releaseKm3: breach.releaseKm3, meanOutflowM3s: breach.meanOutflowM3s, peakScenarioM3s: breach.weirScenario.peakOutflowM3s, closureRatio: balance.summary.closureRatio, residualKm3: balance.summary.residualKm3 }))

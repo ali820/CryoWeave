@@ -1,16 +1,16 @@
 # InSAR Operations and QA 验证记录
 
-验证日期：2026-10-31。
+验证日期：2026-10-31；2026-11-02 增补轨道、引用完整性及栅格边界回归。
 
 ## 离线自测
 
-`python plugins/insar-ops/insar_worker.py --self-test` 返回：
+`plugins/insar-ops/.venv/Scripts/python.exe plugins/insar-ops/insar_worker.py --self-test` 返回：
 
 ```json
-{"ok": true, "selfTest": "passed", "checks": 5}
+{"ok": true, "selfTest": "passed", "checks": 13}
 ```
 
-覆盖：Sentinel-1 档案盘点、时间基线干涉对、异常簇、旧参考版本和路径逃逸。
+覆盖：标准 S1A/S1B 命名的相对轨道换算、不支持命名显式 `unknown`、同轨道 `maxConnections` 计数、未知轨道不配对的档案盘点与干涉对计划、异常簇、旧参考版本、有效引用清单、缺失 SHA-256、VRT/`/vsicurl` 间接数据源拦截和路径逃逸。
 
 ## 真实镇原产品分析
 

@@ -1,16 +1,16 @@
 # Environmental Indices 验证记录
 
-验证日期：2026-10-31。
+验证日期：2026-10-31；离线回归复测：2026-11-02。
 
 ## 离线自测
 
-`python plugins/environmental-indices/indices_worker.py --self-test` 返回：
+`plugins/environmental-indices/.venv/Scripts/python.exe plugins/environmental-indices/indices_worker.py --self-test` 返回：
 
 ```json
-{"ok": true, "selfTest": "passed", "checks": 6}
+{"ok": true, "selfTest": "passed", "checks": 13}
 ```
 
-覆盖：六类指标计算、TVDI 干湿边拟合、输出波段与描述、栅格检查、路径逃逸和输入网格一致性。
+覆盖：六类指标计算、TVDI 干湿边拟合、输出波段与描述、LST/NDMI/NDSI 无 NDVI 独立计算、派生 NDVI/NDMI/NDSI 的 NaN 与零分母掩膜、输出有限像元/`validPixels`/`validCount` 一致性、`maskNodata` 缩放前掩膜与重投影防插值污染、普通路径逃逸、伪装扩展名 VRT 根外来源拦截和栅格检查。
 
 ## 真实 NDVI/LST 样例
 

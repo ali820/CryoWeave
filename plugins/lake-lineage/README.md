@@ -29,7 +29,8 @@
 - `maxPolygonsPerYear`：每年最大多边形数；
 - `startYear` / `endYear`：可选队列端点过滤；
 - `requireComplete`：是否要求范围内每年均有观测；
-- `simplifyMeters`：可选几何简化容差。
+- `simplifyMeters`：可选几何简化容差；
+- `sourceIdColumn` / `sourceIds`：可选外部 ID 列及过滤白名单；只指定列时保留全部 ID。
 
 输出：
 
@@ -39,6 +40,8 @@
 - `manifest.json`：年度输入、阈值、数量和输出哈希。
 
 多候选重叠时，如果最佳连接没有明显优势，会记录 `ambiguous`，不会强行续接。合并/分裂、消失和小事端分开记录。
+
+事件的 `from` / `to` 在指定 `sourceIdColumn` 时沿用外部 ID；内部连接使用年度唯一节点键，因此跨年重复的外部 ID 不会把无关几何并入同一谱系。`minor_exchange` 的 `ratioPrevious` 和 `ratioCurrent` 分别是交集面积占上一年、当年节点面积的比例。
 
 ### `colocate`
 

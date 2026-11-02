@@ -172,7 +172,7 @@ def load_nodes(request: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict
             if geometry is None or geometry.is_empty or geometry.geom_type not in {'Polygon', 'MultiPolygon'}:
                 continue
             properties = frame.iloc[source_index].drop(labels='geometry').to_dict()
-            if source_id_column and str(properties.get(source_id_column)) not in selected_ids:
+            if source_id_column and selected_ids is not None and str(properties.get(source_id_column)) not in selected_ids:
                 continue
             if not geometry.is_valid:
                 geometry = make_valid(geometry)
@@ -182,7 +182,7 @@ def load_nodes(request: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict
                 continue
             count += 1
             node_id = str(properties[source_id_column]) if source_id_column else f'y{year}_{count:05d}'
-            nodes.append({'id': node_id, 'year': year, 'index': source_index, 'geometry': geometry, 'area': geometry.area, 'properties': properties})
+            nodes.append({'id': node_id, 'key': f'y{year}_{count:05d}', 'year': year, 'index': source_index, 'geometry': geometry, 'area': geometry.area, 'properties': properties})
             if count >= max_per_year:
                 break
         file_summaries.append({'year': year, 'path': str(item['path']), 'nodes': count, 'sourceFeatures': len(frame)})
@@ -197,7 +197,7 @@ def build_lineage(request: dict[str, Any]) -> dict[str, Any]:
     minor_overlap = number(request, 'minorOverlap', 0.001, 0, 1.0)
     if minor_overlap > threshold:
         raise LineageError('minorOverlap must not exceed dominantOverlap')
-    parent = {node['id']: node['id'] for node in nodes}
+    parent = {node['key']: node['key'] for node in nodes}
     def find(value: str) -> str:
         while parent[value] != value:
             parent[value] = parent[parent[value]]
@@ -237,32 +237,32 @@ def build_lineage(request: dict[str, Any]) -> dict[str, Any]:
             if candidates:
                 best = candidates[0]
                 if len(candidates) > 1 and best[0] < candidates[1][0] * 1.2:
-                    events.append({'year': current_year, 'type': 'ambiguous', 'from': prev['id'], 'to': [item[1]['id'] for item in candidates], 'areaKm2': best[0] / 1_000_000})
+                    events.append({'year': current_year, 'type': 'ambiguous', 'from': prev['id'], 'to': [item[2]['id'] for item in candidates], 'areaKm2': best[0] / 1_000_000})
                 else:
                     links.append(best)
             for minor in minors:
-                if any(link[1]['id'] == minor[1]['id'] for link in links):
+                if any(link[1]['key'] == minor[1]['key'] for link in links):
                     continue
-                events.append({'year': current_year, 'type': 'minor_exchange', 'from': prev['id'], 'to': minor[1]['id'], 'areaKm2': minor[0] / 1_000_000, 'ratioPrevious': minor[2], 'ratioCurrent': minor[3]})
+                events.append({'year': current_year, 'type': 'minor_exchange', 'from': prev['id'], 'to': minor[2]['id'], 'areaKm2': minor[0] / 1_000_000, 'ratioPrevious': minor[3], 'ratioCurrent': minor[4]})
             if not candidates and not minors:
                 events.append({'year': current_year, 'type': 'disappear', 'from': prev['id'], 'areaKm2': prev['area'] / 1_000_000})
             elif not candidates and len(minors) > 1:
-                events.append({'year': current_year, 'type': 'split', 'from': prev['id'], 'to': [item[1]['id'] for item in minors], 'areaKm2': prev['area'] / 1_000_000})
-        linked_current = {link[1]['id'] for link in links}
+                events.append({'year': current_year, 'type': 'split', 'from': prev['id'], 'to': [item[2]['id'] for item in minors], 'areaKm2': prev['area'] / 1_000_000})
+        linked_current = {link[2]['key'] for link in links}
         for curr in current:
-            if curr['id'] not in linked_current:
+            if curr['key'] not in linked_current:
                 events.append({'year': current_year, 'type': 'new', 'to': curr['id'], 'areaKm2': curr['area'] / 1_000_000})
         for _, prev, curr, _, _ in links:
-            previous_roots = {find(link[1]['id']) for link in links if link[2]['id'] == curr['id']}
-            current_targets = {link[2]['id'] for link in links if link[1]['id'] == prev['id']}
+            previous_roots = {find(link[1]['key']) for link in links if link[2]['key'] == curr['key']}
+            current_targets = {link[2]['key'] for link in links if link[1]['key'] == prev['key']}
             if len(previous_roots) > 1:
                 events.append({'year': current_year, 'type': 'merge', 'from': prev['id'], 'to': curr['id']})
             if len(current_targets) > 1:
                 events.append({'year': current_year, 'type': 'split', 'from': prev['id'], 'to': curr['id']})
-            union(prev['id'], curr['id'])
+            union(prev['key'], curr['key'])
     groups = {}
     for node in nodes:
-        groups.setdefault(find(node['id']), []).append(node)
+        groups.setdefault(find(node['key']), []).append(node)
     cohort = []
     for members in groups.values():
         years_in_group = sorted({node['year'] for node in members})
@@ -446,22 +446,89 @@ def self_test() -> dict[str, Any]:
         project = root / 'project'
         project.mkdir()
         state = root / 'state'
+
         def polygon(x: float, size: float = 1000) -> dict[str, Any]:
             return {'type': 'Polygon', 'coordinates': [[[x, 4700000], [x + size, 4700000], [x + size, 4700000 + size], [x, 4700000 + size], [x, 4700000]]]}
+
+        def write_lakes(path: Path, rows: list[tuple[str | None, dict[str, Any]]]) -> None:
+            features = [
+                {'type': 'Feature', 'geometry': geometry, 'properties': {} if lake_id is None else {'lake_id': lake_id}}
+                for lake_id, geometry in rows
+            ]
+            gpd.GeoDataFrame.from_features(features, crs='EPSG:32645').to_file(path, driver='GeoJSON')
+
+        def request_for(paths: list[str], **overrides: Any) -> dict[str, Any]:
+            request = {
+                'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state),
+                'yearFiles': paths, 'workingCrs': 'EPSG:32645', 'dominantOverlap': 0.95,
+                'minorOverlap': 0.001, 'maxHashBytes': 1000000,
+            }
+            request.update(overrides)
+            return request
+
+        def read_events(result: dict[str, Any]) -> list[dict[str, str]]:
+            with open(result['paths']['events'], encoding='utf-8-sig', newline='') as stream:
+                return list(csv.DictReader(stream))
+
         for year, geometries in {2020: [polygon(500000), polygon(501000)], 2021: [polygon(500000), polygon(501000, 500), polygon(501500, 400), polygon(504000)], 2022: [polygon(500000), polygon(501000), polygon(504000)]}.items():
-            features = [{'type': 'Feature', 'geometry': geometry, 'properties': {}} for geometry in geometries]
-            gpd.GeoDataFrame.from_features(features, crs='EPSG:32645').to_file(project / f'lakes_{year}.geojson', driver='GeoJSON')
-        request = {'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state), 'yearFiles': [f'lakes_{year}.geojson' for year in (2020, 2021, 2022)], 'workingCrs': 'EPSG:32645', 'dominantOverlap': 0.9, 'minorOverlap': 0.001, 'maxHashBytes': 1000000}
+            write_lakes(project / f'lakes_{year}.geojson', [(None, geometry) for geometry in geometries])
+        request = request_for([f'lakes_{year}.geojson' for year in (2020, 2021, 2022)], dominantOverlap=0.9)
         result = build_lineage(request)
         assert result['summary']['lineages'] >= 2 and result['summary']['events'] > 0
         checks += 1
         assert any(item['completeSeries'] for item in result['rows'])
+        checks += 1
+        split_events = [row for row in read_events(result) if row['type'] == 'split' and row['from'] == 'y2020_00002']
+        assert len(split_events) == 1
+        assert set(split_events[0]['to'].split(';')) == {'y2021_00002', 'y2021_00003'}
         checks += 1
         transport = project / 'roads.geojson'
         gpd.GeoDataFrame.from_features([{'type': 'Feature', 'geometry': {'type': 'LineString', 'coordinates': [[500000, 4700000], [501000, 4700000]]}, 'properties': {'name': 'demo road'}}], crs='EPSG:32645').to_file(transport, driver='GeoJSON')
         nearest = colocate({**request, 'cohort': result['paths']['cohort'], 'transport': 'roads.geojson'})
         assert nearest['summary']['count'] >= 1 and nearest['rows'][0]['nearestDistanceKm'] < 1000
         checks += 1
+
+        # A source column without a whitelist must load every ID, and repeated
+        # external IDs must not alias unrelated annual nodes in the union-find.
+        identified_paths = ['identified_2020.geojson', 'identified_2021.geojson']
+        write_lakes(project / identified_paths[0], [('stable', polygon(510000)), ('reused', polygon(520000))])
+        write_lakes(project / identified_paths[1], [('stable', polygon(510000)), ('reused', polygon(530000))])
+        identified_request = request_for(identified_paths, sourceIdColumn='lake_id')
+        identified_summary = inspect(identified_request)
+        assert [item['nodes'] for item in identified_summary['years']] == [2, 2]
+        checks += 1
+        filtered_summary = inspect({**identified_request, 'sourceIds': ['stable']})
+        assert [item['nodes'] for item in filtered_summary['years']] == [1, 1]
+        checks += 1
+        identified_result = build_lineage(identified_request)
+        assert identified_result['summary']['lineages'] == 3
+        assert sorted(item['yearsObserved'] for item in identified_result['rows']) == [1, 1, 2]
+        checks += 1
+
+        # Two similarly dominant successors must be reported as current nodes,
+        # not as repeated references to the previous node.
+        ambiguous_paths = ['ambiguous_2020.geojson', 'ambiguous_2021.geojson']
+        write_lakes(project / ambiguous_paths[0], [(None, polygon(540000))])
+        write_lakes(project / ambiguous_paths[1], [(None, polygon(540000)), (None, polygon(540010))])
+        ambiguous_result = build_lineage(request_for(ambiguous_paths))
+        ambiguous_events = [row for row in read_events(ambiguous_result) if row['type'] == 'ambiguous']
+        assert len(ambiguous_events) == 1
+        assert ambiguous_events[0]['from'] == 'y2020_00001'
+        assert set(ambiguous_events[0]['to'].split(';')) == {'y2021_00001', 'y2021_00002'}
+        checks += 1
+
+        # The asymmetric overlap makes the previous/current ratios distinguishable.
+        minor_paths = ['minor_2020.geojson', 'minor_2021.geojson']
+        write_lakes(project / minor_paths[0], [(None, polygon(550000, 1000))])
+        write_lakes(project / minor_paths[1], [(None, polygon(550000, 8000))])
+        minor_result = build_lineage(request_for(minor_paths))
+        minor_events = [row for row in read_events(minor_result) if row['type'] == 'minor_exchange']
+        assert len(minor_events) == 1
+        assert minor_events[0]['from'] == 'y2020_00001' and minor_events[0]['to'] == 'y2021_00001'
+        assert math.isclose(float(minor_events[0]['ratioPrevious']), 1.0, abs_tol=1e-12)
+        assert math.isclose(float(minor_events[0]['ratioCurrent']), 0.015625, abs_tol=1e-12)
+        checks += 1
+
         try:
             build_lineage({**request, 'yearFiles': ['../escape.geojson']})
         except LineageError:

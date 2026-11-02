@@ -1,2 +1,5 @@
 packages:
   - 'plugins/*'
+
+overrides:
+  zod: 4.6.7

@@ -1,16 +1,16 @@
 # Lake Lineage 验证记录
 
-验证日期：2026-10-31。
+验证日期：2026-10-31；离线回归更新：2026-11-02。
 
 ## 离线自测
 
 `python plugins/lake-lineage/lineage_worker.py --self-test` 返回：
 
 ```json
-{"ok": true, "selfTest": "passed", "checks": 4}
+{"ok": true, "selfTest": "passed", "checks": 10}
 ```
 
-覆盖：跨年续接、分裂、稳定队列、交通共位和路径逃逸。额外通过真实数据检查了几何 CRS、无效几何、非有限数值和 GeoJSON 输出兼容性。
+覆盖：跨年续接、分裂及其当前年目标节点、稳定队列、交通共位和路径逃逸；回归断言还覆盖仅设置 `sourceIdColumn` 而省略 `sourceIds`、白名单过滤、跨年重复外部 ID 隔离、`ambiguous` 的当前年候选列表，以及 `minor_exchange` 的目标节点和 `ratioPrevious=1.0` / `ratioCurrent=0.015625` 非对称比例。上述夹具在旧实现分别触发 `None` 成员判断异常、无关年度节点合并、prev ID 误写及比例错位。额外通过真实数据检查了几何 CRS、无效几何、非有限数值和 GeoJSON 输出兼容性。
 
 ## 真实 Lake_TP 2020–2023 全流程
 

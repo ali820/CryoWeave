@@ -28,6 +28,11 @@ for package in (ROOT / 'plugins').glob('*/package.json'):
     assert (package.parent / patch).is_file(), f'{package}: missing bundle patch {patch}'
     assert (package.parent / 'index.js').is_file(), f'{package}: missing index.js'
     assert (package.parent / 'icon.svg').is_file(), f'{package}: missing icon.svg'
+    assert (package.parent / 'tests' / 'host_smoke.mjs').is_file(), f'{package}: missing portable Host smoke test'
+    for test_path in (package.parent / 'tests').glob('*.mjs'):
+        test_source = test_path.read_text(encoding='utf-8')
+        for machine_path in ('C:/Users/', 'E:/', 'CryoWeave-state'):
+            assert machine_path not in test_source, f'{test_path}: machine-specific path {machine_path}'
     for locale in ('en', 'zh'):
         locale_path = package.parent / 'locale' / f'{locale}.json'
         data = json.loads(locale_path.read_text(encoding='utf-8'))

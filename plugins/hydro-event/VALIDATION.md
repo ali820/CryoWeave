@@ -1,16 +1,28 @@
 # Hydro Event 验证记录
 
-验证日期：2026-10-31。
+验证日期：2026-11-02。
 
 ## 离线自测
 
-`python plugins/hydro-event/hydro_worker.py --self-test` 返回：
+使用插件独立环境运行：
 
-```json
-{"ok": true, "selfTest": "passed", "checks": 5}
+```powershell
+plugins/hydro-event/.venv/Scripts/python.exe plugins/hydro-event/hydro_worker.py --self-test
 ```
 
-覆盖：DEM 库容曲线、储量插值、水量闭合、溃决平均出流、堰流情景和路径逃逸。
+返回：
+
+```json
+{"ok": true, "selfTest": "passed", "checks": 11}
+```
+
+覆盖：DEM 库容曲线、最低高程基线、首层体积、储量插值、水量闭合、溃决平均出流、堰流情景、不同 CRS 下的掩膜网格与面积、VRT 根外/远程来源拒绝和路径逃逸。
+
+独立参考值而非仅守恒检查：
+
+- 100 个 `100 m × 100 m` 像元的总面积为 **1 km²**；0 m 基线有 1 个像元，10 m 有 11 个像元，因此首层梯形体积为 `(0.01 + 0.11) / 2 × 10 / 1000 = 0.0006 km³`；
+- EPSG:4326 DEM 重投影到 EPSG:32645 后，掩膜与目标网格的 4 个内部像元精确对齐；期望面积为 `4 × |target_transform.a × target_transform.e| / 1e6`，并同时核对 `validPixels = 4`；
+- 临时 VRT 分别引用 `projectRoot` 外的 GeoTIFF 与 `/vsicurl/https://example.invalid/dem.tif`，两者必须在打开栅格前拒绝，自测不访问网络。
 
 ## 真实库容与测高验证
 

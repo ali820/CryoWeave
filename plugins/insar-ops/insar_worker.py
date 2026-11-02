@@ -24,6 +24,16 @@ from shapely.geometry import shape
 
 MAX_STDIN_BYTES = 4 * 1024 * 1024
 
+SENTINEL1_STANDARD_NAME = re.compile(
+    r'^S1(?P<mission>[AB])_[A-Z]{2}_[A-Z0-9_]{4}_[012][A-Z][A-Z]{2}_'
+    r'(?P<start>\d{8}T\d{6})_\d{8}T\d{6}_'
+    r'(?P<absoluteOrbit>\d{6})_[0-9A-F]{6}_[0-9A-F]{4}'
+    r'(?:\.SAFE)?(?:\.zip)?$'
+)
+SENTINEL1_ORBIT_OFFSETS = {'A': 73, 'B': 27}
+SENTINEL1_ORBITS_PER_CYCLE = 175
+TIFF_SIGNATURES = {b'II\x2a\x00', b'MM\x00\x2a', b'II\x2b\x00', b'MM\x00\x2b'}
+
 
 class InsarError(ValueError):
     pass
@@ -81,6 +91,17 @@ def local_path(root: Path, raw: Any, state: Path | None = None, allow_dir: bool 
     return path
 
 
+def local_raster_path(root: Path, raw: Any) -> Path:
+    if isinstance(raw, str) and raw.lstrip().lower().startswith('/vsi'):
+        raise InsarError('GDAL virtual file system paths are not supported; use a direct local GeoTIFF')
+    path = local_path(root, raw)
+    with path.open('rb') as stream:
+        signature = stream.read(4)
+    if signature not in TIFF_SIGNATURES:
+        raise InsarError('Raster inputs must be direct local GeoTIFF files; VRT and other indirect data sources are not supported')
+    return path
+
+
 def number(request: dict[str, Any], key: str, default: float, minimum: float, maximum: float) -> float:
     value = request.get(key, default)
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not np.isfinite(value) or value < minimum or value > maximum:
@@ -116,10 +137,25 @@ def json_safe(value: Any) -> Any:
 
 
 def parse_scene(path: Path) -> dict[str, Any]:
-    date_match = re.search(r'(20\d{6})', path.name)
-    track_match = re.search(r'[Tt](\d{2,3})', path.name)
+    standard = SENTINEL1_STANDARD_NAME.fullmatch(path.name)
+    if standard:
+        date_match: re.Match[str] | None = re.match(r'(?P<date>\d{8})', standard.group('start'))
+        absolute_orbit = int(standard.group('absoluteOrbit'))
+        if absolute_orbit > 0:
+            offset = SENTINEL1_ORBIT_OFFSETS[standard.group('mission')]
+            track = str((absolute_orbit - offset) % SENTINEL1_ORBITS_PER_CYCLE + 1)
+        else:
+            track = 'unknown'
+    else:
+        date_match = re.search(r'(?<!\d)(20\d{6})(?!\d)', path.name)
+        # Legacy names are supported only when the track is an explicit,
+        # delimiter-bounded field; never infer it from acquisition timestamps.
+        track_match = re.search(r'(?:^|_)[Rr](\d{1,3})(?=_|\.|$)', path.name)
+        if track_match is None:
+            track_match = re.search(r'(?:^|_)[Tt](\d{1,3})(?=_|\.|$)', path.name)
+        track = str(int(track_match.group(1))) if track_match and 1 <= int(track_match.group(1)) <= SENTINEL1_ORBITS_PER_CYCLE else 'unknown'
     date = datetime.strptime(date_match.group(1), '%Y%m%d').date() if date_match else None
-    return {'path': path, 'name': path.name, 'date': date, 'track': track_match.group(1) if track_match else 'unknown', 'bytes': path.stat().st_size}
+    return {'path': path, 'name': path.name, 'date': date, 'track': track, 'bytes': path.stat().st_size}
 
 
 def archive_scenes(request: dict[str, Any]) -> list[dict[str, Any]]:
@@ -168,21 +204,20 @@ def plan_pairs(request: dict[str, Any]) -> dict[str, Any]:
     dated = sorted((scene for scene in scenes if scene['date'] is not None), key=lambda scene: scene['date'])
     pairs = []
     for index, master in enumerate(dated):
-        for offset in range(1, max_connections + 1):
-            if index + offset >= len(dated):
-                break
-            slave = dated[index + offset]
+        connections = 0
+        for slave in dated[index + 1:]:
             days = (slave['date'] - master['date']).days
             if days > max_days:
                 break
-            if same_track and master['track'] != slave['track']:
+            if same_track and (master['track'] == 'unknown' or master['track'] != slave['track']):
                 continue
             pairs.append({
                 'master': master['name'], 'slave': slave['name'],
                 'masterDate': master['date'].isoformat(), 'slaveDate': slave['date'].isoformat(),
                 'days': days, 'track': master['track'],
             })
-            if len(pairs) >= max_pairs:
+            connections += 1
+            if len(pairs) >= max_pairs or connections >= max_connections:
                 break
         if len(pairs) >= max_pairs:
             break
@@ -211,8 +246,8 @@ def plan_pairs(request: dict[str, Any]) -> dict[str, Any]:
 
 def analyze_products(request: dict[str, Any]) -> dict[str, Any]:
     root = project_root(request)
-    velocity_path = local_path(root, request.get('velocity'))
-    coherence_path = local_path(root, request.get('coherence'))
+    velocity_path = local_raster_path(root, request.get('velocity'))
+    coherence_path = local_raster_path(root, request.get('coherence'))
     with rasterio.open(velocity_path) as velocity_ds, rasterio.open(coherence_path) as coherence_ds:
         if velocity_ds.width != coherence_ds.width or velocity_ds.height != coherence_ds.height or velocity_ds.transform != coherence_ds.transform or velocity_ds.crs != coherence_ds.crs:
             raise InsarError('Velocity and coherence rasters must share the same grid and CRS')
@@ -324,11 +359,19 @@ def verify_manifest(request: dict[str, Any]) -> dict[str, Any]:
         if not product_path.is_file():
             findings.append({'code': 'FILE_MISSING', 'severity': 'error', 'message': f'Missing product: {product["path"]}', 'path': product['path']})
             continue
+        expected_hash = product.get('sha256')
+        if not isinstance(expected_hash, str) or not expected_hash.strip():
+            findings.append({'code': 'SHA256_MISSING', 'severity': 'error', 'message': f'Product has no SHA-256: {product["path"]}', 'path': product['path']})
+            continue
+        expected_hash = expected_hash.strip().lower()
+        if re.fullmatch(r'[0-9a-f]{64}', expected_hash) is None:
+            findings.append({'code': 'SHA256_INVALID', 'severity': 'error', 'message': f'Invalid SHA-256: {product["path"]}', 'path': product['path']})
+            continue
         actual_hash = hash_file(product_path, request['maxHashBytes'])
         if actual_hash.get('skipped'):
             findings.append({'code': 'HASH_SKIPPED_LARGE', 'severity': 'warning', 'message': f'Hash skipped above limit: {product["path"]}', 'path': product['path']})
-        elif product.get('sha256') and actual_hash['sha256'] != product['sha256'].lower():
-            findings.append({'code': 'SHA256_MISMATCH', 'severity': 'error', 'message': f'SHA-256 mismatch: {product["path"]}', 'path': product['path'], 'expected': product['sha256'].lower(), 'actual': actual_hash['sha256']})
+        elif actual_hash['sha256'] != expected_hash:
+            findings.append({'code': 'SHA256_MISMATCH', 'severity': 'error', 'message': f'SHA-256 mismatch: {product["path"]}', 'path': product['path'], 'expected': expected_hash, 'actual': actual_hash['sha256']})
     return {
         'ok': True, 'action': 'verify', 'auditStatus': 'issues_found' if findings else 'clean',
         'staleReference': any(item['code'] == 'STALE_REFERENCE' for item in findings),
@@ -346,13 +389,43 @@ def self_test() -> dict[str, Any]:
         project = root / 'project'
         project.mkdir()
         state = root / 'state'
-        for name in ['S1A_IW_SLC_20230101_T84.zip', 'S1A_IW_SLC_20230105_T84.zip', 'S1A_IW_SLC_20230120_T84.zip', 'S1A_IW_SLC_20230201_T85.zip']:
-            (project / name).write_bytes(b'x')
-        inspected = inspect_archive({'archiveRoot': '.', 'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state)})
-        assert inspected['summary']['files'] == 4
+        standard = project / 'standard'
+        standard.mkdir()
+        standard_names = [
+            'S1A_IW_SLC__1SDV_20230101T010203_20230101T010228_000073_000001_ABCD.zip',
+            'S1B_IW_SLC__1SDV_20230102T010203_20230102T010228_000027_000001_ABCD.zip',
+        ]
+        for name in standard_names:
+            (standard / name).write_bytes(b'x')
+        standard_files = inspect_archive({'archiveRoot': 'standard', 'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state)})['files']
+        assert [item['track'] for item in standard_files] == ['1', '1']
+        assert standard_files[0]['date'] == '2023-01-01'
         checks += 1
-        planned = plan_pairs({'archiveRoot': '.', 'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state), 'maxTemporalBaselineDays': 20, 'maxConnections': 2, 'maxHashBytes': 1000000})
+        unsupported = project / 'unsupported'
+        unsupported.mkdir()
+        for day, orbit in [(3, 1), (4, 2)]:
+            (unsupported / f'S1C_IW_SLC__1SDV_202301{day:02d}T010203_202301{day:02d}T010228_{orbit:06d}_000001_ABCD.zip').write_bytes(b'x')
+        unsupported_request = {'archiveRoot': 'unsupported', 'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state)}
+        unsupported_files = inspect_archive(unsupported_request)['files']
+        assert [item['track'] for item in unsupported_files] == ['unknown', 'unknown']
+        checks += 1
+        unknown_plan = plan_pairs({**unsupported_request, 'maxTemporalBaselineDays': 20, 'maxConnections': 2, 'maxHashBytes': 1000000})
+        assert unknown_plan['summary']['pairCount'] == 0
+        checks += 1
+        for name in ['S1A_IW_SLC_20230101_T84.zip', 'S1A_IW_SLC_20230102_T85.zip', 'S1A_IW_SLC_20230105_T84.zip', 'S1A_IW_SLC_20230120_T84.zip', 'S1A_IW_SLC_20230201_T85.zip']:
+            (project / name).write_bytes(b'x')
+        archive_request = {'archiveRoot': '.', 'pattern': 'S1A_IW_SLC_20*.zip', 'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state)}
+        inspected = inspect_archive(archive_request)
+        assert inspected['summary']['files'] == 5
+        assert inspected['summary']['tracks'] == {'84': 3, '85': 2}
+        checks += 1
+        planned = plan_pairs({**archive_request, 'maxTemporalBaselineDays': 20, 'maxConnections': 2, 'maxHashBytes': 1000000})
         assert planned['summary']['pairCount'] == 3
+        checks += 1
+        limited = plan_pairs({**archive_request, 'maxTemporalBaselineDays': 20, 'maxConnections': 1, 'maxHashBytes': 1000000})
+        assert limited['summary']['pairCount'] == 2
+        assert limited['rows'][0]['master'] == 'S1A_IW_SLC_20230101_T84.zip'
+        assert limited['rows'][0]['slave'] == 'S1A_IW_SLC_20230105_T84.zip'
         checks += 1
         velocity = np.zeros((20, 20), dtype='float32')
         coherence = np.full((20, 20), 0.9, dtype='float32')
@@ -367,9 +440,33 @@ def self_test() -> dict[str, Any]:
         checks += 1
         manifest = project / 'reference.json'
         manifest.write_text(json.dumps({'reference_version': 'old', 'products': [{'path': 'velocity.tif', 'sha256': hash_file(project / 'velocity.tif', 1000000)['sha256']}, {'path': 'coherence.tif', 'sha256': hash_file(project / 'coherence.tif', 1000000)['sha256']}]}), encoding='utf-8')
-        verified = verify_manifest({'referenceManifest': 'reference.json', 'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state), 'expectedReferenceVersion': 'new', 'maxHashBytes': 1000000})
+        verify_request = {'referenceManifest': 'reference.json', 'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state), 'maxHashBytes': 1000000}
+        verified = verify_manifest({**verify_request, 'expectedReferenceVersion': 'new'})
         assert verified['staleReference'] is True
         checks += 1
+        assert verify_manifest(verify_request)['auditStatus'] == 'clean'
+        checks += 1
+        missing_hash = project / 'reference-missing-hash.json'
+        missing_hash.write_text(json.dumps({'reference_version': 'old', 'products': [{'path': 'velocity.tif'}]}), encoding='utf-8')
+        missing_hash_result = verify_manifest({**verify_request, 'referenceManifest': 'reference-missing-hash.json'})
+        assert missing_hash_result['auditStatus'] == 'issues_found'
+        assert [item['code'] for item in missing_hash_result['findings']] == ['SHA256_MISSING']
+        checks += 1
+        outside = root / 'outside.tif'
+        outside.write_bytes((project / 'velocity.tif').read_bytes())
+        (project / 'indirect.vrt').write_text('<VRTDataset rasterXSize="20" rasterYSize="20"><VRTRasterBand band="1" dataType="Float32"><SimpleSource><SourceFilename relativeToVRT="1">../outside.tif</SourceFilename><SourceBand>1</SourceBand></SimpleSource></VRTRasterBand></VRTDataset>', encoding='utf-8')
+        try:
+            analyze_products({'velocity': 'indirect.vrt', 'coherence': 'coherence.tif', 'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state), 'maxHashBytes': 1000000})
+        except InsarError:
+            checks += 1
+        else:
+            raise AssertionError('Indirect VRT source accepted')
+        try:
+            analyze_products({'velocity': '/vsicurl/https://example.invalid/velocity.tif', 'coherence': 'coherence.tif', 'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state), 'maxHashBytes': 1000000})
+        except InsarError:
+            checks += 1
+        else:
+            raise AssertionError('GDAL virtual file system source accepted')
         try:
             analyze_products({'velocity': '../escape.tif', 'coherence': 'coherence.tif', 'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state)})
         except InsarError:

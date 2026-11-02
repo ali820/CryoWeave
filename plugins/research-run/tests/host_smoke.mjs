@@ -1,53 +1,88 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { apply } from '../index.js'
 
-const stateRoot = 'C:/Users/wsdzk/Desktop/CryoWeave-state'
-const tools = new Map()
-const ctx = {
-  effect: (callback) => callback(),
-  tools: { register: (definition) => { tools.set(definition.name, definition); return () => tools.delete(definition.name) } },
+function selectPython() {
+  const configured = process.env.CRYO_PYTHON?.trim() || process.env.CRYO_RESEARCH_RUN_PYTHON?.trim()
+  if (configured) return configured
+  const pluginRoot = fileURLToPath(new URL('../', import.meta.url))
+  const local = [join(pluginRoot, '.venv', 'Scripts', 'python.exe'), join(pluginRoot, '.venv', 'bin', 'python')].find(existsSync)
+  if (local) return local
+  for (const candidate of ['python', 'python3']) {
+    const probe = spawnSync(candidate, ['--version'], { stdio: 'ignore' })
+    if (!probe.error && probe.status === 0) return candidate
+  }
+  return 'python'
 }
-apply(ctx, {
-  allowedRoots: ['E:/文章同步'],
-  stateRoot,
-  timeoutMs: 120000,
-  maxHashBytes: 268435456,
-})
-const tool = tools.get('research_run')
-const exec = { signal: AbortSignal.timeout(110000) }
-const call = (args) => tool.execute(args, exec).then(JSON.parse)
-const assertOk = (result) => { if (!result.ok) throw new Error(JSON.stringify(result)) }
 
-const created = await call({
-  action: 'create',
-  projectRoot: 'E:/文章同步/16-dk2/5-独库植被过渡带',
-  pipeline: 'validation-gee-ndvi',
-  config: { asset: 'projects/ee-my-road/assets/dukuregion', startDate: '2024-06-01', endDate: '2024-10-01', scale: 30, apiKey: 'must-not-persist' },
-  inputs: ['config/r1_median.yml'],
-  steps: ['analysis'],
-})
-assertOk(created)
-const runId = created.run.runId
-if (created.run.config.apiKey !== '[REDACTED]') throw new Error('Sensitive config was not redacted')
+const temporary = await mkdtemp(join(tmpdir(), 'cryo-run-host-'))
+try {
+  const projectRoot = join(temporary, 'project')
+  const stateRoot = join(temporary, 'state')
+  await mkdir(projectRoot, { recursive: true })
+  await writeFile(join(projectRoot, 'input.csv'), 'a,b\n1,2\n', 'utf8')
 
-const running = await call({ action: 'update_status', runId, status: 'running', step: 'analysis', note: 'Host lifecycle validation' })
-assertOk(running)
-const runDirectory = join(stateRoot, 'runs', runId)
-mkdirSync(runDirectory, { recursive: true })
-const artifact = join(runDirectory, 'result.json')
-writeFileSync(artifact, JSON.stringify({ meanNDVI: 0.35283914502024716, source: 'validation-only' }), 'utf8')
+  const tools = new Map()
+  const ctx = {
+    effect: (callback) => callback(),
+    tools: { register: (definition) => { tools.set(definition.name, definition); return () => tools.delete(definition.name) } },
+  }
+  apply(ctx, {
+    pythonPath: selectPython(),
+    allowedRoots: [projectRoot],
+    stateRoot,
+    timeoutMs: 60000,
+    maxHashBytes: 1024 * 1024,
+  })
+  const tool = tools.get('research_run')
+  assert.equal(typeof tool?.execute, 'function', 'research_run was not registered')
+  const raw = async (args) => JSON.parse(await tool.execute(args, { signal: AbortSignal.timeout(60000) }))
+  const call = async (args) => {
+    const result = await raw(args)
+    assert.equal(result.ok, true, JSON.stringify(result))
+    return result
+  }
 
-const registered = await call({ action: 'register_artifacts', runId, artifacts: [`state://runs/${runId}/result.json`], status: 'complete', step: 'analysis' })
-assertOk(registered)
-const current = await call({ action: 'verify', runId })
-assertOk(current)
-if (current.auditStatus !== 'current') throw new Error(`Expected current, got ${current.auditStatus}`)
+  const created = await call({
+    action: 'create', projectRoot, pipeline: 'offline-host-validation',
+    config: { year: 2024, apiKey: 'must-not-persist' },
+    inputs: ['input.csv'], steps: ['analysis'],
+  })
+  const runId = created.run.runId
+  assert.equal(created.run.config.apiKey, '[REDACTED]')
+  await call({ action: 'update_status', runId, status: 'running', step: 'analysis', note: 'offline Host lifecycle' })
 
-writeFileSync(artifact, JSON.stringify({ meanNDVI: 0.0, source: 'intentional-stale-test' }), 'utf8')
-const stale = await call({ action: 'verify', runId })
-assertOk(stale)
-if (stale.auditStatus !== 'stale') throw new Error(`Expected stale, got ${stale.auditStatus}`)
-const listed = await call({ action: 'list', pipeline: 'validation-gee-ndvi', limit: 5 })
-assertOk(listed)
-console.log(JSON.stringify({ ok: true, runId, lifecycle: 'create>running>complete', current: current.auditStatus, stale: stale.auditStatus, staleCode: stale.findings[0]?.code, redacted: true, listed: listed.total }))
+  const artifact = join(projectRoot, 'result.json')
+  await writeFile(artifact, '{"value":1}\n', 'utf8')
+  await call({ action: 'register_artifacts', runId, artifacts: ['result.json'], status: 'complete', step: 'analysis' })
+  const current = await call({ action: 'verify', runId })
+  assert.equal(current.auditStatus, 'current')
+
+  await writeFile(artifact, '{"value":2}\n', 'utf8')
+  const stale = await call({ action: 'verify', runId })
+  assert.equal(stale.auditStatus, 'stale')
+  assert.equal(stale.findings[0]?.code, 'ARTIFACT_SHA256_MISMATCH')
+  const listed = await call({ action: 'list', pipeline: 'offline-host-validation', limit: 5 })
+  assert.equal(listed.total, 1)
+
+  const invalid = await raw({ action: 'update_status', runId, status: 'planned' })
+  assert.equal(invalid.ok, false)
+  assert.equal(invalid.error?.code, 'RUN_ERROR')
+
+  console.log(JSON.stringify({
+    ok: true,
+    offline: true,
+    lifecycle: 'create>running>complete',
+    current: current.auditStatus,
+    stale: stale.auditStatus,
+    listed: listed.total,
+    errorProtocol: invalid.error.code,
+  }))
+} finally {
+  await rm(temporary, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 })
+}

@@ -55,6 +55,8 @@ def state_root(request: dict[str, Any]) -> Path:
 def local_path(root: Path, raw: Any) -> Path:
     if not isinstance(raw, str) or not raw.strip():
         raise IndicesError('Raster path must be a non-empty string')
+    if raw.strip().replace('\\', '/').lower().startswith('/vsi'):
+        raise IndicesError(f'GDAL virtual raster paths are not allowed: {raw}')
     candidate = Path(raw)
     path = candidate.resolve() if candidate.is_absolute() else (root / candidate).resolve()
     if not inside(path, root):
@@ -81,8 +83,25 @@ def sources(request: dict[str, Any]) -> dict[str, dict[str, Any]]:
         band = value.get('band', 1)
         if not isinstance(band, int) or isinstance(band, bool) or band < 1:
             raise IndicesError(f'Input {role} band must be a positive integer')
-        result[role] = {'path': path, 'band': band, 'role': role}
+        result[role] = {'path': path, 'band': band, 'role': role, 'root': root}
     return result
+
+
+def validate_dataset(source: dict[str, Any], dataset: Any) -> None:
+    path = source['path']
+    if (dataset.driver or '').lower() == 'vrt':
+        raise IndicesError(f'VRT and indirect raster sources are not allowed: {path}')
+    files = dataset.files or []
+    if not files:
+        raise IndicesError(f'Raster has no verifiable local file source: {path}')
+    for filename in files:
+        normalized = str(filename).replace('\\', '/')
+        if normalized.lower().startswith('/vsi'):
+            raise IndicesError(f'GDAL virtual raster sources are not allowed: {path}')
+        candidate = Path(filename)
+        real_source = candidate.resolve() if candidate.is_absolute() else (path.parent / candidate).resolve()
+        if not inside(real_source, source['root']):
+            raise IndicesError(f'Raster source escapes projectRoot: {filename}')
 
 
 def number(request: dict[str, Any], key: str, default: float, minimum: float, maximum: float) -> float:
@@ -101,6 +120,7 @@ def inspect(request: dict[str, Any]) -> dict[str, Any]:
             continue
         seen.add(key)
         with rasterio.open(source['path']) as dataset:
+            validate_dataset(source, dataset)
             result.append({
                 'role': role,
                 'path': str(source['path']),
@@ -118,8 +138,16 @@ def inspect(request: dict[str, Any]) -> dict[str, Any]:
     return {'ok': True, 'action': 'inspect', 'sources': result}
 
 
-def read_raster(source: dict[str, Any], target_grid: dict[str, Any] | None = None) -> tuple[np.ma.MaskedArray, dict[str, Any]]:
+def apply_nodata_mask(data: np.ma.MaskedArray, mask_nodata: float | None) -> np.ma.MaskedArray:
+    if mask_nodata is None:
+        return data
+    custom_mask = np.ma.getdata(data) == mask_nodata
+    return np.ma.masked_array(data, mask=np.ma.getmaskarray(data) | custom_mask, copy=False)
+
+
+def read_raster(source: dict[str, Any], target_grid: dict[str, Any] | None = None, mask_nodata: float | None = None) -> tuple[np.ma.MaskedArray, dict[str, Any]]:
     with rasterio.open(source['path']) as dataset:
+        validate_dataset(source, dataset)
         if source['band'] > dataset.count:
             raise IndicesError(f'Band {source["band"]} does not exist in {source["path"]}')
         metadata = {
@@ -128,19 +156,20 @@ def read_raster(source: dict[str, Any], target_grid: dict[str, Any] | None = Non
             'transform': dataset.transform,
             'crs': dataset.crs,
         }
+        source_values = apply_nodata_mask(dataset.read(source['band'], masked=True).astype('float32'), mask_nodata)
         if target_grid is None or grid_compatible(metadata, target_grid):
-            return dataset.read(source['band'], masked=True).astype('float32'), target_grid or metadata
+            return source_values, target_grid or metadata
         if dataset.crs is None or target_grid['crs'] is None:
             raise IndicesError('Cannot align rasters when CRS metadata is missing')
         from rasterio.warp import Resampling, reproject
-        source_values = dataset.read(source['band'], masked=False)
+        source_values = np.ma.filled(source_values, np.nan).astype('float32', copy=False)
         destination = np.full((target_grid['height'], target_grid['width']), np.nan, dtype='float32')
         reproject(
             source=source_values,
             destination=destination,
             src_transform=metadata['transform'],
             src_crs=metadata['crs'],
-            src_nodata=dataset.nodata,
+            src_nodata=np.nan,
             dst_transform=target_grid['transform'],
             dst_crs=target_grid['crs'],
             dst_nodata=np.nan,
@@ -150,7 +179,8 @@ def read_raster(source: dict[str, Any], target_grid: dict[str, Any] | None = Non
 
 
 def finite_mask(data: np.ma.MaskedArray) -> np.ndarray:
-    return ~np.ma.getmaskarray(data) & np.isfinite(data)
+    values = np.ma.getdata(data)
+    return ~np.ma.getmaskarray(data) & np.isfinite(values)
 
 
 def normalized_difference(first: np.ma.MaskedArray, second: np.ma.MaskedArray) -> np.ma.MaskedArray:
@@ -160,7 +190,8 @@ def normalized_difference(first: np.ma.MaskedArray, second: np.ma.MaskedArray) -
 
 
 def valid_values(data: np.ma.MaskedArray, valid: np.ndarray) -> np.ndarray:
-    values = np.asarray(data)[valid & np.isfinite(data)]
+    selected = valid & finite_mask(data)
+    values = np.ma.getdata(data)[selected]
     return values.astype('float64', copy=False)
 
 
@@ -253,10 +284,13 @@ def calculate(request: dict[str, Any]) -> dict[str, Any]:
         raise IndicesError('indices must be a non-empty subset of ndvi/fvc/lst/ndmi/ndsi/tvdi')
     if len(set(requested)) != len(requested):
         raise IndicesError('indices must not contain duplicates')
+    mask_nodata = request.get('maskNodata')
+    if mask_nodata is not None and (isinstance(mask_nodata, bool) or not isinstance(mask_nodata, (int, float))):
+        raise IndicesError('maskNodata must be numeric')
     loaded = {}
     profile_metadata = None
     for role, source in source_map.items():
-        data, metadata = read_raster(source, profile_metadata)
+        data, metadata = read_raster(source, profile_metadata, mask_nodata)
         if profile_metadata is None:
             profile_metadata = metadata
         elif not grid_compatible(metadata, profile_metadata):
@@ -276,9 +310,6 @@ def calculate(request: dict[str, Any]) -> dict[str, Any]:
     ndvi_max = number(request, 'ndviValidMax', 1.0, -1000000, 1000000)
     lst_min = number(request, 'lstMinC', -100.0, -1000, 1000)
     lst_max = number(request, 'lstMaxC', 100.0, -1000, 1000)
-    mask_nodata = request.get('maskNodata')
-    if mask_nodata is not None and (isinstance(mask_nodata, bool) or not isinstance(mask_nodata, (int, float))):
-        raise IndicesError('maskNodata must be numeric')
     for role in ('red', 'nir', 'green', 'swir1'):
         if role in loaded:
             loaded[role] = loaded[role] * reflectance_scale + reflectance_offset
@@ -294,8 +325,6 @@ def calculate(request: dict[str, Any]) -> dict[str, Any]:
     valid = np.ones(profile_metadata['height'], dtype=bool)[:, None] * np.ones(profile_metadata['width'], dtype=bool)[None, :]
     for role, data in loaded.items():
         valid &= finite_mask(data)
-        if mask_nodata is not None:
-            valid &= np.asarray(data) != mask_nodata
         if role in {'red', 'nir', 'green', 'swir1'}:
             valid &= (np.asarray(data) >= reflectance_min) & (np.asarray(data) <= reflectance_max)
         elif role == 'ndvi':
@@ -315,12 +344,15 @@ def calculate(request: dict[str, Any]) -> dict[str, Any]:
             valid &= (qa & (1 << bit)) == 0
     if not valid.any():
         raise IndicesError('No valid pixels remain after masks')
-    if 'ndvi' in loaded:
-        ndvi = loaded['ndvi']
-    elif 'red' in loaded and 'nir' in loaded:
-        ndvi = normalized_difference(loaded['nir'], loaded['red'])
-    else:
-        raise IndicesError('NDVI calculation requires ndvi or red+nir inputs')
+    ndvi = None
+    if any(index in requested for index in ('ndvi', 'fvc', 'tvdi')):
+        if 'ndvi' in loaded:
+            ndvi = loaded['ndvi']
+        elif 'red' in loaded and 'nir' in loaded:
+            ndvi = normalized_difference(loaded['nir'], loaded['red'])
+        else:
+            raise IndicesError('NDVI calculation requires ndvi or red+nir inputs')
+        valid &= finite_mask(ndvi)
     outputs = {}
     if 'ndvi' in requested:
         outputs['ndvi'] = ndvi
@@ -347,6 +379,10 @@ def calculate(request: dict[str, Any]) -> dict[str, Any]:
         if 'lst' not in loaded:
             raise IndicesError('TVDI requires an LST input')
         outputs['tvdi'], tvdi_fit = fit_tvdi(ndvi, loaded['lst'], valid, request)
+    for output in outputs.values():
+        valid &= finite_mask(output)
+    if not valid.any():
+        raise IndicesError('No valid pixels remain after derived-index masks')
     stats = [stats_for(name, outputs[name], valid) for name in requested]
     batch_id = f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:8]}"
     output_root = state_root(request) / batch_id
@@ -410,12 +446,19 @@ def calculate(request: dict[str, Any]) -> dict[str, Any]:
 
 def self_test() -> dict[str, Any]:
     import tempfile
+    from xml.sax.saxutils import escape
     checks = 0
     with tempfile.TemporaryDirectory(prefix='indices-worker-') as temporary:
         root = Path(temporary)
         state = root / 'state'
         project = root / 'project'
         project.mkdir()
+        transform = rasterio.Affine(1, 0, 0, 0, -1, 0)
+
+        def write_raster(path: Path, values: np.ndarray, grid_transform=transform, nodata: float | None = -9999) -> None:
+            with rasterio.open(path, 'w', driver='GTiff', width=values.shape[1], height=values.shape[0], count=1, dtype='float32', crs='EPSG:4326', transform=grid_transform, nodata=nodata) as target:
+                target.write(values, 1)
+
         shape = (40, 40)
         x = np.linspace(0.1, 0.8, shape[1], dtype='float32')[None, :].repeat(shape[0], axis=0)
         arrays = {
@@ -426,11 +469,8 @@ def self_test() -> dict[str, Any]:
             'green': np.full(shape, 0.15, dtype='float32'),
             'swir1': np.full(shape, 0.1, dtype='float32'),
         }
-        transform = rasterio.Affine(1, 0, 0, 0, -1, 0)
         for role, values in arrays.items():
-            path = project / f'{role}.tif'
-            with rasterio.open(path, 'w', driver='GTiff', width=shape[1], height=shape[0], count=1, dtype='float32', crs='EPSG:4326', transform=transform, nodata=-9999) as target:
-                target.write(values, 1)
+            write_raster(project / f'{role}.tif', values)
         inputs = {role: f'{role}.tif' for role in arrays}
         request = {'projectRoot': str(project), 'allowedRoots': [str(project)], 'stateRoot': str(state), 'inputs': inputs, 'indices': ['ndvi', 'fvc', 'lst', 'ndmi', 'ndsi', 'tvdi'], 'maxPixels': 1000000, 'maxHashBytes': 1000000, 'ndviBins': 5, 'minBinPoints': 5}
         result = calculate(request)
@@ -443,12 +483,70 @@ def self_test() -> dict[str, Any]:
         with rasterio.open(result['paths']['raster']) as output:
             assert output.count == 6 and output.descriptions[0] == 'ndvi'
         checks += 1
+
+        independent = calculate({**request, 'inputs': {role: inputs[role] for role in ('lst', 'nir', 'green', 'swir1')}, 'indices': ['lst', 'ndmi', 'ndsi']})
+        assert independent['validPixels'] == shape[0] * shape[1]
+        assert [row['validCount'] for row in independent['stats']] == [shape[0] * shape[1]] * 3
+        checks += 1
+
+        mask_arrays = {
+            'nir': np.array([[0.2, 0.2, 0.6], [np.nan, 0.6, 0.6]], dtype='float32'),
+            'red': np.array([[-0.2, 0.2, 0.2], [0.2, 0.2, 0.2]], dtype='float32'),
+            'swir1': np.array([[0.1, -0.2, 0.1], [0.1, 0.1, 0.1]], dtype='float32'),
+            'green': np.array([[0.15, 0.15, -0.1], [0.15, 0.15, 0.15]], dtype='float32'),
+        }
+        for role, values in mask_arrays.items():
+            write_raster(project / f'mask_{role}.tif', values)
+        masked = calculate({**request, 'inputs': {role: f'mask_{role}.tif' for role in mask_arrays}, 'indices': ['ndvi', 'ndmi', 'ndsi']})
+        assert masked['validPixels'] == 2
+        assert [row['validCount'] for row in masked['stats']] == [2, 2, 2]
+        checks += 1
+        with rasterio.open(masked['paths']['raster']) as output:
+            assert [int(np.isfinite(output.read(band)).sum()) for band in (1, 2, 3)] == [2, 2, 2]
+        checks += 1
+
+        write_raster(project / 'scaled_ndvi.tif', np.array([[5000, -9999], [5000, 5000]], dtype='float32'), nodata=None)
+        scaled = calculate({**request, 'inputs': {'ndvi': 'scaled_ndvi.tif'}, 'indices': ['ndvi'], 'ndviScale': 0.0001, 'maskNodata': -9999})
+        assert scaled['validPixels'] == 3 and scaled['stats'][0]['validCount'] == 3
+        with rasterio.open(scaled['paths']['raster']) as output:
+            assert int(np.isfinite(output.read(1)).sum()) == 3
+        checks += 1
+
+        target_transform = rasterio.Affine(1, 0, 10, 0, -1, 10)
+        source_transform = rasterio.Affine(1, 0, 9.5, 0, -1, 10.5)
+        write_raster(project / 'reproject_red.tif', np.full((2, 2), 2000, dtype='float32'), target_transform, nodata=None)
+        source_nir = np.full((3, 3), 6000, dtype='float32')
+        source_nir[0, 0] = -9999
+        write_raster(project / 'reproject_nir.tif', source_nir, source_transform, nodata=None)
+        reprojected = calculate({**request, 'inputs': {'red': 'reproject_red.tif', 'nir': 'reproject_nir.tif'}, 'indices': ['ndvi'], 'reflectanceScale': 0.0001, 'maskNodata': -9999})
+        assert reprojected['validPixels'] == 4 and reprojected['stats'][0]['validCount'] == 4
+        with rasterio.open(reprojected['paths']['raster']) as output:
+            np.testing.assert_allclose(output.read(1), np.full((2, 2), 0.5), rtol=0, atol=0.000001)
+        checks += 1
+
         try:
             calculate({**request, 'inputs': {'ndvi': '../escape.tif'}, 'indices': ['ndvi']})
         except IndicesError:
             checks += 1
         else:
             raise AssertionError('Escaping raster accepted')
+
+        outside = root / 'outside.tif'
+        write_raster(outside, np.full((2, 2), 0.5, dtype='float32'))
+        vrt = f'''<VRTDataset rasterXSize="2" rasterYSize="2"><SRS>EPSG:4326</SRS><GeoTransform>0,1,0,0,0,-1</GeoTransform><VRTRasterBand dataType="Float32" band="1"><SimpleSource><SourceFilename relativeToVRT="0">{escape(str(outside))}</SourceFilename><SourceBand>1</SourceBand><SourceProperties RasterXSize="2" RasterYSize="2" DataType="Float32" BlockXSize="2" BlockYSize="2"/><SrcRect xOff="0" yOff="0" xSize="2" ySize="2"/><DstRect xOff="0" yOff="0" xSize="2" ySize="2"/></SimpleSource></VRTRasterBand></VRTDataset>'''
+        (project / 'disguised.tif').write_text(vrt, encoding='utf-8')
+        try:
+            calculate({**request, 'inputs': {'ndvi': 'disguised.tif'}, 'indices': ['ndvi']})
+        except IndicesError:
+            checks += 1
+        else:
+            raise AssertionError('VRT source escaping projectRoot accepted')
+        try:
+            inspect({**request, 'inputs': {'ndvi': 'disguised.tif'}})
+        except IndicesError:
+            checks += 1
+        else:
+            raise AssertionError('VRT source passed inspect')
         assert inspect(request)['sources']
         checks += 1
     return {'ok': True, 'selfTest': 'passed', 'checks': checks}
